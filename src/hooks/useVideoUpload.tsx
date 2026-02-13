@@ -1,7 +1,7 @@
 import * as React from "react";
-import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "@/services/videos";
-import { useAuthStore } from "@/stores/authStore";
-import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos";
+import { useAuthStore } from "../stores/authStore";
+import { showSuccess, showError, showLoading, dismissToast } from "../utils/toast";
 
 type Status = "idle" | "uploading" | "processing" | "ready" | "error";
 
@@ -57,7 +57,6 @@ export function useVideoUpload() {
 
         // MOCK: simulate backend processing (e.g., OpusClip adding captions) — after 3s -> ready
         setTimeout(async () => {
-          // For mock we will set processed url same as raw url and add placeholder captions + descriptions
           const processedUrl = publicUrl;
           const captions = [
             { start: 0, end: 2, text: "Legenda 1" },
@@ -75,7 +74,6 @@ export function useVideoUpload() {
             status: "ready",
           });
 
-          // refresh local data
           setVideoData({
             id: videoRecord.id,
             video_processed_url: processedUrl,
@@ -127,7 +125,6 @@ export function useVideoUpload() {
         showError("Erro ao salvar descrições");
         return { error: upError };
       }
-      // Update local
       setVideoData((prev: any) => ({ ...(prev ?? {}), descriptions }));
       showSuccess("✅ Vídeo salvo com sucesso!");
       return { data };

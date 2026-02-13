@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import VideoUpload from "@/components/modules/VideoUpload";
 import VideoPreview from "@/components/modules/VideoPreview";
 import DescriptionEditor from "@/components/modules/DescriptionEditor";
-import { useVideoUpload } from "@/hooks/useVideoUpload";
+import { useVideoUpload } from "../hooks/useVideoUpload";
 import { useAuth } from "@/hooks/useAuth";
 
 const Module2Page: React.FC = () => {
