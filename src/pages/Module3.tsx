@@ -68,6 +68,7 @@ const Module3Page: React.FC = () => {
   } = useAvatar(initialVideoId);
 
   useEffect(() => {
+    let mounted = true;
     async function loadPlan() {
       setLoadingPlan(true);
       try {
@@ -78,26 +79,39 @@ const Module3Page: React.FC = () => {
         }
         const res: any = await supabase.from("organizations").select("plan,heygen_credits_used,heygen_credits_total").eq("id", orgId).single();
         if (!res.error && res.data) {
-          setOrgPlan(res.data.plan ?? "free");
+          if (mounted) setOrgPlan(res.data.plan ?? "free");
         } else {
-          setOrgPlan("free");
+          if (mounted) setOrgPlan("free");
         }
       } catch (e) {
-        setOrgPlan("free");
+        if (mounted) setOrgPlan("free");
       } finally {
-        setLoadingPlan(false);
+        if (mounted) setLoadingPlan(false);
       }
     }
     loadPlan();
+    return () => {
+      mounted = false;
+    };
   }, [orgId]);
+
+  // Allow dev preview or explicit query param for inspection:
+  const devOverride = import.meta.env.DEV === true;
+  const previewParam = params.get("preview") === "1";
+
+  const allowAccess = devOverride || previewParam || orgPlan === "pro";
 
   const handleUpgrade = () => {
     navigate("/settings?tab=plan");
   };
 
   const handleRefreshPlan = () => {
-    // simple reload
+    // simple reload to refetch plan
     window.location.reload();
+  };
+
+  const handleBack = () => {
+    navigate("/dashboard");
   };
 
   if (loadingPlan) {
@@ -108,8 +122,8 @@ const Module3Page: React.FC = () => {
     );
   }
 
-  if (orgPlan !== "pro") {
-    return <UpgradeRequired onUpgrade={handleUpgrade} onRefresh={handleRefreshPlan} onBack={() => navigate("/dashboard")} />;
+  if (!allowAccess) {
+    return <UpgradeRequired onUpgrade={handleUpgrade} onRefresh={handleRefreshPlan} onBack={handleBack} />;
   }
 
   // Word count helper
