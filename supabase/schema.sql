@@ -329,7 +329,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ================================================
 
 -- Policy: Upload em videos-raw
-CREATE POLICY IF NOT EXISTS "Users can upload to videos-raw in their organization"
+CREATE POLICY "Users can upload to videos-raw in their organization"
     ON storage.objects FOR INSERT
     WITH CHECK (
         bucket_id = 'videos-raw'
@@ -339,7 +339,7 @@ CREATE POLICY IF NOT EXISTS "Users can upload to videos-raw in their organizatio
     );
 
 -- Policy: Download de videos-raw
-CREATE POLICY IF NOT EXISTS "Users can download from videos-raw in their organization"
+CREATE POLICY "Users can download from videos-raw in their organization"
     ON storage.objects FOR SELECT
     USING (
         bucket_id = 'videos-raw'
@@ -349,7 +349,7 @@ CREATE POLICY IF NOT EXISTS "Users can download from videos-raw in their organiz
     );
 
 -- Policy: Download de videos-processed
-CREATE POLICY IF NOT EXISTS "Users can download from videos-processed in their organization"
+CREATE POLICY "Users can download from videos-processed in their organization"
     ON storage.objects FOR SELECT
     USING (
         bucket_id = 'videos-processed'
