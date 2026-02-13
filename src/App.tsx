@@ -14,6 +14,7 @@ import Onboarding from "@/pages/Onboarding";
 import Module2 from "@/pages/Module2";
 import CalendarPage from "@/pages/Calendar";
 import Analytics from "@/pages/Analytics";
+import Module1 from "./pages/Module1";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,16 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Module 1 */}
+          <Route
+            path="/modules/1"
+            element={
+              <ProtectedRoute>
+                <Module1 />
               </ProtectedRoute>
             }
           />

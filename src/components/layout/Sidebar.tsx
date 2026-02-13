@@ -16,6 +16,7 @@ const Sidebar: React.FC = () => {
     <aside className="w-64 bg-white border-r min-h-[calc(100vh-64px)] p-4">
       <nav className="space-y-2">
         <NavLink to="/dashboard">Dashboard</NavLink>
+        <NavLink to="/modules/1">Módulo 1</NavLink>
         <NavLink to="/modules/2">Módulo 2</NavLink>
         <NavLink to="/calendar">📅 Calendário</NavLink>
         <NavLink to="/analytics">📊 Analytics</NavLink>
@@ -25,7 +26,7 @@ const Sidebar: React.FC = () => {
       <div className="mt-6 text-sm text-slate-500">
         <div className="font-medium">Módulos</div>
         <ul className="mt-2">
-          <li className="mt-1">Pesquisa + Script <span className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-xs">Em breve</span></li>
+          <li className="mt-1">Pesquisa + Script <span className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-xs">Novo</span></li>
           <li className="mt-1">Upload + Edição <span className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-xs">Em breve</span></li>
           <li className="mt-1">Avatar AI <span className="ml-2 px-2 py-0.5 rounded bg-yellow-100 text-xs">Plano Pro</span></li>
         </ul>
