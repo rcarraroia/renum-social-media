@@ -39,6 +39,11 @@ const SignupForm: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     const toastId = showLoading("Criando conta...");
     const res = await signUp(data.email, data.password, data.fullName);
+
+    // Log completo para debugging (inspecione no console do browser)
+    // eslint-disable-next-line no-console
+    console.log("signup result:", res);
+
     dismissToast(toastId);
     if ((res as any)?.error) {
       showError((res as any).error.message ?? "Erro ao criar conta");
@@ -50,26 +55,26 @@ const SignupForm: React.FC = () => {
       <h2 className="text-2xl font-semibold text-indigo-700">Criar conta</h2>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Nome completo</label>
-        <input {...register("fullName")} className="mt-1 block w-full rounded-md border p-2" />
+        <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">Nome completo</label>
+        <input id="fullName" autoComplete="name" {...register("fullName")} className="mt-1 block w-full rounded-md border p-2" />
         {errors.fullName && <p className="text-sm text-red-500 mt-1">{errors.fullName.message}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Email</label>
-        <input {...register("email")} className="mt-1 block w-full rounded-md border p-2" />
+        <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>
+        <input id="email" autoComplete="email" {...register("email")} className="mt-1 block w-full rounded-md border p-2" />
         {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Senha</label>
-        <input type="password" {...register("password")} className="mt-1 block w-full rounded-md border p-2" />
+        <label htmlFor="password" className="block text-sm font-medium text-slate-700">Senha</label>
+        <input id="password" type="password" autoComplete="new-password" {...register("password")} className="mt-1 block w-full rounded-md border p-2" />
         {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Confirmar senha</label>
-        <input type="password" {...register("confirmPassword")} className="mt-1 block w-full rounded-md border p-2" />
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">Confirmar senha</label>
+        <input id="confirmPassword" type="password" autoComplete="new-password" {...register("confirmPassword")} className="mt-1 block w-full rounded-md border p-2" />
         {errors.confirmPassword && <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>}
       </div>
 

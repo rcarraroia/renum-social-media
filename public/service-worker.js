@@ -3,7 +3,6 @@ const OFFLINE_URL = "/offline.html";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
-  "/src/main.tsx",
   "/favicon.ico",
   "/manifest.json",
 ];
@@ -39,18 +38,45 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+
+  // Safely parse URL and ignore non-http(s) schemes (e.g. chrome-extension://)
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (e) {
+    // Invalid URL — ignore and let browser handle it
+    return;
+  }
+
+  // Only handle http and https requests here
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  // For cross-origin requests, don't attempt to cache — just fetch and fallback to offline
+  if (url.origin !== self.location.origin) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => res)
+        .catch(() => caches.match(OFFLINE_URL)),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
         .then((res) => {
-          if (!res || res.status !== 200) return res;
+          // Cache only valid, same-origin, successful responses
+          if (!res || res.status !== 200 || res.type !== "basic") return res;
           const resClone = res.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, resClone);
+            cache.put(req, resClone).catch(() => {
+              // ignore cache.put errors (e.g. quota issues)
+            });
           });
           return res;
         })
         .catch(() => null);
+
       return cached || fetchPromise || caches.match(OFFLINE_URL);
     }),
   );
