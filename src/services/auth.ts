@@ -28,9 +28,8 @@ export async function getCurrentUser() {
   if (!authUser) return null;
 
   // Fetch row from public.users to get organization_id and role
-  // Avoid using a problematic generic form signature; rely on runtime table name and handle possibly-null profile
   const { data: profile, error } = await supabase
-    .from("users")
+    .from<UsersRow>("users")
     .select("*")
     .eq("id", authUser.id)
     .single();
@@ -51,7 +50,7 @@ export async function updateLastLogin(userId: string) {
   if (!userId) return null;
   const payload: Partial<UsersRow> = { last_login: new Date().toISOString() };
   const { data, error } = await supabase
-    .from("users")
+    .from<UsersRow>("users")
     .update(payload)
     .eq("id", userId)
     .select()
