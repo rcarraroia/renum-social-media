@@ -7,8 +7,6 @@ import TopPosts from "../components/analytics/TopPosts";
 import NetworkPerformance from "../components/analytics/NetworkPerformance";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { Eye, Heart, BarChart, Users, ThumbsUp, MessageCircle } from "lucide-react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import { format } from "date-fns";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 
@@ -30,6 +28,11 @@ const AnalyticsPage: React.FC = () => {
   const exportToPDF = async () => {
     const toastId = showLoading("Exportando relatório...");
     try {
+      // Dynamically import the heavy libraries only when needed (client-side)
+      const { jsPDF } = await import("jspdf");
+      const html2canvasModule = await import("html2canvas");
+      const html2canvas = (html2canvasModule as any).default ?? html2canvasModule;
+
       const el = document.getElementById("analytics-container");
       if (!el) throw new Error("Elemento não encontrado");
       const canvas = await html2canvas(el, { scale: 2 });
