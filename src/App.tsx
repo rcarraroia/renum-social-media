@@ -15,6 +15,7 @@ import Module2 from "@/pages/Module2";
 import CalendarPage from "@/pages/Calendar";
 import Analytics from "@/pages/Analytics";
 import Module1 from "./pages/Module1";
+import Module3 from "./pages/Module3";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,16 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Module2 />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Module 3 */}
+          <Route
+            path="/modules/3"
+            element={
+              <ProtectedRoute>
+                <Module3 />
               </ProtectedRoute>
             }
           />

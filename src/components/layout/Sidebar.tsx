@@ -18,6 +18,7 @@ const Sidebar: React.FC = () => {
         <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/modules/1">Módulo 1</NavLink>
         <NavLink to="/modules/2">Módulo 2</NavLink>
+        <NavLink to="/modules/3">Módulo 3</NavLink>
         <NavLink to="/calendar">📅 Calendário</NavLink>
         <NavLink to="/analytics">📊 Analytics</NavLink>
         <NavLink to="/settings">Settings</NavLink>
