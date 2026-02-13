@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import * as authService from "@/services/auth";
 import { showSuccess, showError } from "@/utils/toast";
+import { hasCompletedOnboarding } from "@/utils/onboarding";
 
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
@@ -26,7 +27,17 @@ export function useAuth() {
         showSuccess("Conta criada! Redirecionando...");
         // initialization will pick up created user + organization via trigger
         await initialize();
-        navigate("/dashboard");
+
+        // After creating account, detect onboarding
+        const currentUser = useAuthStore.getState().user;
+        const orgId = currentUser?.organization_id;
+        const completed = await hasCompletedOnboarding(currentUser?.id, orgId);
+        if (!completed) {
+          navigate("/onboarding");
+        } else {
+          navigate("/dashboard");
+        }
+
         return { data: res.data };
       } finally {
         setLoading(false);
@@ -46,8 +57,17 @@ export function useAuth() {
         }
         // Fetch latest profile
         await initialize();
-        showSuccess("Login bem-sucedido");
-        navigate("/dashboard");
+
+        // After login, decide onboarding or dashboard
+        const currentUser = useAuthStore.getState().user;
+        const orgId = currentUser?.organization_id;
+        const completed = await hasCompletedOnboarding(currentUser?.id, orgId);
+        if (!completed) {
+          navigate("/onboarding");
+        } else {
+          showSuccess("Login bem-sucedido");
+          navigate("/dashboard");
+        }
         return { data: res.data };
       } finally {
         setLoading(false);
