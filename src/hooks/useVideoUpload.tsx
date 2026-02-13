@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos";
+import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos/index";
 import { useAuthStore } from "../stores/authStore";
 import { showSuccess, showError, showLoading, dismissToast } from "../utils/toast";
 
