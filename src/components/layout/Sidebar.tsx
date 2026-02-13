@@ -17,6 +17,7 @@ const Sidebar: React.FC = () => {
       <nav className="space-y-2">
         <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/modules/2">Módulo 2</NavLink>
+        <NavLink to="/calendar">📅 Calendário</NavLink>
         <NavLink to="/settings">Settings</NavLink>
       </nav>
 
