@@ -2,8 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { UsersRow } from "@/types/database.types";
 
 export async function signUp(email: string, password: string, fullName: string) {
-  // Pass full_name via user_metadata so the DB trigger can use it
-  const res = await supabase.auth.signUp(
+  // supabase-js typing may vary across versions; cast to any to satisfy TS while keeping runtime behavior
+  const res = await (supabase.auth as any).signUp(
     { email, password },
     {
       data: { full_name: fullName },
@@ -28,13 +28,14 @@ export async function getCurrentUser() {
   if (!authUser) return null;
 
   // Fetch row from public.users to get organization_id and role
+  // Avoid using a problematic generic form signature; rely on runtime table name and handle possibly-null profile
   const { data: profile, error } = await supabase
-    .from<UsersRow>("users")
+    .from("users")
     .select("*")
     .eq("id", authUser.id)
     .single();
 
-  if (error && error.code !== "PGRST116") {
+  if (error && (error as any).code !== "PGRST116") {
     // Let caller handle errors (don't swallow)
     throw error;
   }
@@ -42,15 +43,16 @@ export async function getCurrentUser() {
   return {
     id: authUser.id,
     email: authUser.email ?? "",
-    ...profile,
+    ...(profile ?? {}),
   };
 }
 
 export async function updateLastLogin(userId: string) {
   if (!userId) return null;
+  const payload: Partial<UsersRow> = { last_login: new Date().toISOString() };
   const { data, error } = await supabase
     .from("users")
-    .update({ last_login: new Date().toISOString() })
+    .update(payload)
     .eq("id", userId)
     .select()
     .single();

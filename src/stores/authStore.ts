@@ -1,4 +1,4 @@
-import create from "zustand";
+import { create } from "zustand";
 import type { UsersRow } from "@/types/database.types";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUser } from "@/services/auth";
