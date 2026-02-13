@@ -27,15 +27,16 @@ export async function getCurrentUser() {
   const authUser = userData?.user;
   if (!authUser) return null;
 
-  // Fetch row from public.users to get organization_id and role
-  const { data: profile, error } = await supabase
-    .from<UsersRow>("users")
+  // Use any-cast at the query boundary to avoid incompatible generic typings across supabase versions
+  const res = await (supabase.from("users") as any)
     .select("*")
     .eq("id", authUser.id)
     .single();
 
+  const profile = (res?.data ?? null) as Partial<UsersRow> | null;
+  const error = res?.error;
+
   if (error && (error as any).code !== "PGRST116") {
-    // Let caller handle errors (don't swallow)
     throw error;
   }
 
@@ -43,18 +44,22 @@ export async function getCurrentUser() {
     id: authUser.id,
     email: authUser.email ?? "",
     ...(profile ?? {}),
-  };
+  } as (UsersRow & { id: string; email: string }) | null;
 }
 
 export async function updateLastLogin(userId: string) {
   if (!userId) return null;
   const payload: Partial<UsersRow> = { last_login: new Date().toISOString() };
-  const { data, error } = await supabase
-    .from<UsersRow>("users")
+
+  const res = await (supabase.from("users") as any)
     .update(payload)
     .eq("id", userId)
     .select()
     .single();
+
+  const data = res?.data;
+  const error = res?.error;
+
   if (error) throw error;
   return data;
 }
