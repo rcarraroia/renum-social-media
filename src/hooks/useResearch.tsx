@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createResearchVideo, saveGeneratedScript } from "../services/research";
+import { createResearchVideo, saveGeneratedScript } from "@/services/research";
 import { useAuthStore } from "../stores/authStore";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 
