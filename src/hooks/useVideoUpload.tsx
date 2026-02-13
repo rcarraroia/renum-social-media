@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos/index";
+import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos";
 import { useAuthStore } from "../stores/authStore";
 import { showSuccess, showError, showLoading, dismissToast } from "../utils/toast";
 
@@ -32,11 +32,11 @@ export function useVideoUpload() {
         if (createErr || !videoRecord) {
           throw createErr ?? new Error("Falha ao criar registro do vídeo");
         }
+        // videoRecord is any => safe to access .id
         setVideoId(videoRecord.id);
 
-        // Upload to storage (note: supabase JS doesn't provide progress callbacks reliably; we simulate progress)
+        // Upload to storage (simulate progress)
         const toastId = showLoading("Fazendo upload do vídeo...");
-        // Simulate progress
         const fakeProgressInterval = setInterval(() => {
           setUploadProgress((p) => Math.min(95, p + Math.floor(Math.random() * 12)));
         }, 400);
@@ -55,7 +55,7 @@ export function useVideoUpload() {
         setStatus("processing");
         showSuccess("Upload concluído — processando vídeo...");
 
-        // MOCK: simulate backend processing (e.g., OpusClip adding captions) — after 3s -> ready
+        // MOCK: simulate backend processing (after 3s -> ready)
         setTimeout(async () => {
           const processedUrl = publicUrl;
           const captions = [
@@ -104,10 +104,9 @@ export function useVideoUpload() {
         return;
       }
       setVideoId(id);
-      setVideoData({
-        ...data,
-      });
-      setStatus((data.status ?? "idle") as Status);
+      // data is any, safe to spread into an object
+      setVideoData({ ...(data as any) });
+      setStatus(((data as any).status ?? "idle") as Status);
     },
     [],
   );
