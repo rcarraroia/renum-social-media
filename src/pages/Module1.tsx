@@ -4,6 +4,7 @@ import ThemeInput from "../components/modules/ThemeInput";
 import ScriptPreview from "../components/modules/ScriptPreview";
 import NextSteps from "../components/modules/NextSteps";
 import { useResearch } from "../hooks/useResearch";
+import { useAuth } from "@/hooks/useAuth";
 
 const Module1Page: React.FC = () => {
   const {
@@ -21,6 +22,9 @@ const Module1Page: React.FC = () => {
     approveScript,
     videoId,
   } = useResearch();
+
+  const { user } = useAuth();
+  const userPlan = (user?.organization?.plan as "free" | "starter" | "pro") ?? "free";
 
   return (
     <MainLayout>
@@ -75,7 +79,9 @@ const Module1Page: React.FC = () => {
           )}
 
           {step === 3 && (
-            <NextSteps script={script} videoId={videoId} />
+            <div>
+              <NextSteps script={script} videoId={videoId ?? ""} userPlan={userPlan} />
+            </div>
           )}
         </div>
 

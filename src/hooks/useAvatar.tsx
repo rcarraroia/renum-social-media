@@ -92,27 +92,7 @@ export function useAvatar(initialVideoId?: string | null) {
   const [videoUrl, setVideoUrl] = React.useState<string | null>(null);
   const [credits, setCredits] = React.useState<{ used: number; total: number }>({ used: 7, total: 30 });
   const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    async function load() {
-      if (!videoId) {
-        const params = new URLSearchParams(location.search);
-        const q = params.get("video_id");
-        if (q) setVideoId(q);
-        return;
-      }
-      try {
-        const res: any = await supabase.from("videos").select("script").eq("id", videoId).single();
-        if (!res.error && res.data) {
-          setScript(res.data.script ?? "");
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoId]);
+  const [loading, setLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     async function loadOrg() {
@@ -179,6 +159,53 @@ export function useAvatar(initialVideoId?: string | null) {
     }
   }, [videoId, selectedAvatar, selectedVoice, settings, orgId, remainingCredits]);
 
+  // New: load script by video id (used when navigating from Module1)
+  const loadScriptFromModule1 = React.useCallback(
+    async (vid: string) => {
+      if (!vid) return;
+      setLoading(true);
+      try {
+        const res: any = await supabase.from("videos").select("id,title,script").eq("id", vid).single();
+        if (res?.error) {
+          throw res.error;
+        }
+        const v = res?.data ?? null;
+        if (!v?.script) {
+          showError("Script não encontrado no rascunho");
+          return;
+        }
+        setVideoId(v.id);
+        setScript(v.script);
+        // move to step 2 so user picks avatar (as requested)
+        setStep(2);
+        showSuccess("✅ Script carregado do ScriptAI!");
+      } catch (err: any) {
+        console.error("Erro ao carregar script:", err);
+        showError("Falha ao carregar script");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const loadVideoFromId = React.useCallback(
+    async (id: string) => {
+      if (!id) return;
+      try {
+        const res: any = await supabase.from("videos").select("*").eq("id", id).single();
+        if (!res?.error && res.data) {
+          setVideoId(id);
+          setScript(res.data.script ?? "");
+          setVideoUrl(res.data.video_processed_url ?? null);
+        }
+      } catch (e) {
+        // ignore
+      }
+    },
+    [],
+  );
+
   return {
     step,
     setStep,
@@ -198,6 +225,9 @@ export function useAvatar(initialVideoId?: string | null) {
     credits,
     remainingCredits,
     error,
+    loading,
     generateVideo,
+    loadScriptFromModule1,
+    loadVideoFromId,
   };
 }

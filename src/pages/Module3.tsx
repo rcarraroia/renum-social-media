@@ -6,7 +6,7 @@ import CreditsBadge from "@/components/modules/CreditsBadge";
 import { useAvatar } from "@/hooks/useAvatar";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { showError, showSuccess } from "@/utils/toast";
 
 const UpgradeRequired: React.FC<{ onUpgrade: () => void; onRefresh: () => void; onBack: () => void }> = ({ onUpgrade, onRefresh, onBack }) => {
@@ -40,13 +40,13 @@ const UpgradeRequired: React.FC<{ onUpgrade: () => void; onRefresh: () => void; 
 const Module3Page: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const orgId = user?.organization_id;
   const [orgPlan, setOrgPlan] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<boolean>(true);
 
-  const params = new URLSearchParams(location.search);
-  const initialVideoId = params.get("video_id") ?? null;
+  const videoIdFromUrl = searchParams.get("video_id");
 
   const {
     step,
@@ -65,7 +65,8 @@ const Module3Page: React.FC = () => {
     progress,
     videoUrl,
     generateVideo,
-  } = useAvatar(initialVideoId);
+    loadScriptFromModule1,
+  } = useAvatar();
 
   useEffect(() => {
     let mounted = true;
@@ -97,9 +98,17 @@ const Module3Page: React.FC = () => {
 
   // Allow dev preview or explicit query param for inspection:
   const devOverride = import.meta.env.DEV === true;
-  const previewParam = params.get("preview") === "1";
+  const previewParam = searchParams.get("preview") === "1";
 
   const allowAccess = devOverride || previewParam || orgPlan === "pro";
+
+  useEffect(() => {
+    // If a video_id is present in the URL, load its script into the avatar flow
+    if (videoIdFromUrl) {
+      loadScriptFromModule1(videoIdFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoIdFromUrl]);
 
   const handleUpgrade = () => {
     navigate("/settings?tab=plan");
