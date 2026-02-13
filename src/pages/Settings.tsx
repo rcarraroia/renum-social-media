@@ -86,7 +86,7 @@ const Settings: React.FC = () => {
         <section className="bg-white p-4 rounded shadow">
           <h3 className="font-medium">Plano</h3>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded">Plano atual: Free</div>
+            <div className="p-4 border rounded">Plano atual: <span className="font-semibold">{(user?.organization?.plan ?? "—").toString().toUpperCase()}</span></div>
             <div className="p-4 border rounded">Vídeos restantes: 3/3</div>
             <div className="p-4 border rounded"><button disabled className="px-3 py-1 rounded bg-indigo-600 text-white disabled:opacity-50">Ver planos</button></div>
           </div>

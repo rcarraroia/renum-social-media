@@ -73,7 +73,7 @@ const Module2Page: React.FC = () => {
           {step === 1 && (
             <VideoUpload
               onFileSelected={handleFileSelected}
-              uploading={status === "uploading"}
+              status={status}
               progress={uploadProgress}
               onCancel={handleCancelUpload}
               error={error}

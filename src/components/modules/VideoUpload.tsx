@@ -3,7 +3,7 @@ import { useDropzone } from "react-dropzone";
 
 type Props = {
   onFileSelected: (file: File) => void;
-  uploading: boolean;
+  status?: "idle" | "uploading" | "processing" | "ready" | "error";
   progress: number;
   onCancel?: () => void;
   error?: string | null;
@@ -11,7 +11,7 @@ type Props = {
 
 const MAX_BYTES = 100 * 1024 * 1024; // 100MB
 
-const VideoUpload: React.FC<Props> = ({ onFileSelected, uploading, progress, onCancel, error }) => {
+const VideoUpload: React.FC<Props> = ({ onFileSelected, status = "idle", progress, onCancel, error }) => {
   const onDrop = React.useCallback(
     (acceptedFiles: File[], fileRejections: any[]) => {
       if (fileRejections?.length) {
@@ -39,13 +39,19 @@ const VideoUpload: React.FC<Props> = ({ onFileSelected, uploading, progress, onC
     },
   });
 
+  const statusLabel = (() => {
+    if (status === "uploading") return "⏳ Fazendo upload do vídeo...";
+    if (status === "processing") return "⚙️ Processando vídeo...";
+    if (status === "ready") return "✅ Upload concluído";
+    if (status === "error") return "❌ Erro no upload";
+    return null;
+  })();
+
   return (
     <div>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
-          isDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition ${isDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"}`}
         style={{ minHeight: 220 }}
       >
         <input {...getInputProps()} />
@@ -54,18 +60,24 @@ const VideoUpload: React.FC<Props> = ({ onFileSelected, uploading, progress, onC
         <div className="mt-2 text-sm text-slate-500">Formatos: MP4, MOV, AVI • Máx: 100MB</div>
       </div>
 
-      {uploading && (
+      {(status === "uploading" || status === "processing") && (
         <div className="mt-4 bg-white p-4 rounded shadow">
-          <div className="text-sm text-slate-600">⏳ Enviando vídeo...</div>
+          <div className="text-sm text-slate-600">{statusLabel}</div>
           <div className="mt-2">
             <div className="w-full bg-slate-100 h-2 rounded overflow-hidden">
-              <div className="h-2 bg-indigo-600" style={{ width: `${progress}%` }} />
+              <div className="h-2 bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
             </div>
             <div className="mt-2 text-sm text-slate-500">{progress}%</div>
           </div>
           <div className="mt-3">
-            <button onClick={onCancel} className="px-3 py-1 rounded bg-red-100 text-red-700 text-sm">Cancelar Upload</button>
+            <button onClick={onCancel} className="px-3 py-1 rounded bg-red-100 text-red-700 text-sm">Cancelar</button>
           </div>
+        </div>
+      )}
+
+      {status === "ready" && (
+        <div className="mt-4 bg-green-50 p-4 rounded text-sm text-green-800">
+          {statusLabel}
         </div>
       )}
 

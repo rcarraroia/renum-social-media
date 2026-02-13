@@ -25,7 +25,7 @@ export function useVideoUpload() {
 
       setError(null);
       setStatus("uploading");
-      setUploadProgress(5);
+      setUploadProgress(2);
 
       try {
         const { data: videoRecord, error: createErr } = await createVideoRecord(orgId, userId);
@@ -35,14 +35,18 @@ export function useVideoUpload() {
         // videoRecord is any => safe to access .id
         setVideoId(videoRecord.id);
 
-        // Upload to storage (simulate progress)
+        // Upload to storage
         const toastId = showLoading("Fazendo upload do vídeo...");
-        const fakeProgressInterval = setInterval(() => {
-          setUploadProgress((p) => Math.min(95, p + Math.floor(Math.random() * 12)));
+
+        // Simulate upload progress more deterministically
+        let uploadCurrent = 2;
+        const uploadInterval = setInterval(() => {
+          uploadCurrent = Math.min(95, uploadCurrent + Math.floor(Math.random() * 12) + 3);
+          setUploadProgress(uploadCurrent);
         }, 400);
 
         const { data: publicUrl, error: uploadErr } = await uploadVideoToStorage(file, orgId, videoRecord.id);
-        clearInterval(fakeProgressInterval);
+        clearInterval(uploadInterval);
         setUploadProgress(100);
         dismissToast(toastId);
 
@@ -53,10 +57,26 @@ export function useVideoUpload() {
         // Update record with raw url and set status processing
         await updateVideoStatus(videoRecord.id, { video_raw_url: publicUrl, status: "processing" });
         setStatus("processing");
+        setUploadProgress(0); // start processing progress
+
         showSuccess("Upload concluído — processando vídeo...");
 
-        // MOCK: simulate backend processing (after 3s -> ready)
+        // Simulate processing progress (deterministic)
+        let proc = 0;
+        const procInterval = setInterval(() => {
+          proc = Math.min(100, proc + Math.floor(Math.random() * 18) + 5);
+          setUploadProgress(proc);
+          if (proc >= 100) {
+            clearInterval(procInterval);
+          }
+        }, 700);
+
+        // MOCK: simulate backend processing (after ~3s -> ready)
         setTimeout(async () => {
+          // ensure processing progress reaches 100
+          setUploadProgress(100);
+          clearInterval(procInterval);
+
           const processedUrl = publicUrl;
           const captions = [
             { start: 0, end: 2, text: "Legenda 1" },
