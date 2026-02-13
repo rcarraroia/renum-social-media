@@ -51,9 +51,9 @@ const App = () => (
             }
           />
 
-          {/* Module 1 */}
+          {/* ScriptAI (formerly Module 1) */}
           <Route
-            path="/modules/1"
+            path="/module-1/script-ai"
             element={
               <ProtectedRoute>
                 <Module1 />
@@ -61,9 +61,9 @@ const App = () => (
             }
           />
 
-          {/* Module 2 */}
+          {/* PostRápido (formerly Module 2) */}
           <Route
-            path="/modules/2"
+            path="/module-2/post-rapido"
             element={
               <ProtectedRoute>
                 <Module2 />
@@ -71,15 +71,20 @@ const App = () => (
             }
           />
 
-          {/* Module 3 */}
+          {/* AvatarAI (formerly Module 3) */}
           <Route
-            path="/modules/3"
+            path="/module-3/avatar-ai"
             element={
               <ProtectedRoute>
                 <Module3 />
               </ProtectedRoute>
             }
           />
+
+          {/* Backwards compatibility: redirect old module paths to new ones */}
+          <Route path="/modules/1" element={<Navigate to="/module-1/script-ai" replace />} />
+          <Route path="/modules/2" element={<Navigate to="/module-2/post-rapido" replace />} />
+          <Route path="/modules/3" element={<Navigate to="/module-3/avatar-ai" replace />} />
 
           {/* Calendar */}
           <Route

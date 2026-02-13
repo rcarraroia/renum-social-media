@@ -20,7 +20,7 @@ const NextSteps: React.FC<Props> = ({ script, videoId }) => {
   };
 
   const goToModule2 = () => {
-    navigate("/modules/2");
+    navigate("/module-2/post-rapido");
   };
 
   const tryAvatar = () => {
@@ -42,10 +42,10 @@ const NextSteps: React.FC<Props> = ({ script, videoId }) => {
         <div className="mt-4 grid grid-cols-1 md:grid-cols-1 gap-4">
           <div className="p-4 border rounded">
             <div className="font-medium">🎥 OPÇÃO 1: Gravar Você Mesmo</div>
-            <div className="text-sm text-slate-600 mt-1">Grave usando o seu celular e envie no Módulo 2.</div>
+            <div className="text-sm text-slate-600 mt-1">Grave usando o seu celular e envie no PostRápido.</div>
             <div className="mt-3 flex gap-2">
               <button onClick={copyScript} className="px-3 py-1 rounded bg-gray-100">📋 Copiar Script</button>
-              <button onClick={goToModule2} className="px-3 py-1 rounded bg-indigo-600 text-white">🎬 Ir para Módulo 2</button>
+              <button onClick={goToModule2} className="px-3 py-1 rounded bg-indigo-600 text-white">🎬 Ir para PostRápido</button>
             </div>
           </div>
 

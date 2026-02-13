@@ -27,8 +27,8 @@ const Module1Page: React.FC = () => {
       <div className="max-w-5xl mx-auto p-4 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Módulo 1: Pesquisa + Script</h1>
-            <p className="text-sm text-slate-500">Gere scripts inteligentes com IA e personalize antes de transformar em vídeo.</p>
+            <h1 className="text-2xl font-bold">📝 ScriptAI</h1>
+            <p className="text-sm text-slate-500">Pesquise temas e gere scripts com IA</p>
           </div>
           <div className="text-sm text-slate-400">Passo {step} de 3</div>
         </div>

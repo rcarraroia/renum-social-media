@@ -121,8 +121,8 @@ const Module3Page: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <button onClick={() => navigate(-1)} className="text-sm text-slate-500 underline">← Voltar</button>
-            <h1 className="text-2xl font-bold mt-2">Módulo 3: Vídeo com Avatar AI</h1>
-            <p className="text-sm text-slate-500">Transforme seu script em vídeo automaticamente com um avatar virtual.</p>
+            <h1 className="text-2xl font-bold mt-2">🤖 AvatarAI</h1>
+            <p className="text-sm text-slate-500">Vídeos com avatar virtual</p>
           </div>
           <div className="flex items-center gap-3">
             <CreditsBadge used={credits.used} total={credits.total} onClick={() => alert(`Créditos: ${credits.total - credits.used}/${credits.total}`)} />
@@ -155,7 +155,7 @@ const Module3Page: React.FC = () => {
                 <div className="mt-2 flex justify-between items-center">
                   <div className="text-xs text-slate-500">Min: 50 palavras • Max: 500 palavras</div>
                   <div>
-                    <button onClick={() => navigate("/modules/1")} className="px-3 py-1 rounded bg-gray-100 mr-2">🔍 Criar Novo Script</button>
+                    <button onClick={() => navigate("/module-1/script-ai")} className="px-3 py-1 rounded bg-gray-100 mr-2">🔍 Criar Novo Script</button>
                     <button onClick={() => setStep(2)} className="px-3 py-1 rounded bg-indigo-600 text-white">Próximo: Escolher Avatar →</button>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ const Module3Page: React.FC = () => {
               </div>
 
               <div className="mt-4 flex gap-2">
-                <button onClick={() => navigate(`/modules/2`)} className="px-3 py-1 rounded bg-gray-100">Editar Descrições</button>
+                <button onClick={() => navigate(`/module-2/post-rapido`)} className="px-3 py-1 rounded bg-gray-100">Editar Descrições</button>
                 <button onClick={() => {
                   showSuccess("✅ Vídeo salvo e pronto para agendamento (mock)");
                   navigate("/dashboard");

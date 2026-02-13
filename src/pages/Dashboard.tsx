@@ -62,9 +62,9 @@ const Dashboard: React.FC = () => {
         <div>
           <h2 className="text-lg font-semibold mb-3">Seus Módulos</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ModuleCard title="Módulo 1: Pesquisa + Script" description="Pesquise temas e gere scripts com IA" badge="Em breve" disabled />
-            <ModuleCard title="Módulo 2: Upload + Edição" description="Faça upload, adicione legendas e agende posts" badge="Em breve" disabled />
-            <ModuleCard title="Módulo 3: Avatar AI" description="Crie vídeos com avatar virtual automaticamente" badge={stats?.plan !== "pro" ? "Plano Pro" : ""} disabled={stats?.plan !== "pro"} />
+            <ModuleCard title="📝 ScriptAI" description="Pesquise temas e gere scripts com IA" badge="Novo" disabled />
+            <ModuleCard title="⚡ PostRápido" description="Faça upload, adicione legendas e agende posts" badge="Em breve" disabled />
+            <ModuleCard title="🤖 AvatarAI" description="Crie vídeos com avatar virtual automaticamente" badge={stats?.plan !== "pro" ? "Plano Pro" : ""} disabled={stats?.plan !== "pro"} />
           </div>
         </div>
 

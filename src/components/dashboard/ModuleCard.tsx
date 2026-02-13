@@ -22,7 +22,7 @@ const ModuleCard: React.FC<{
     >
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-lg font-semibold">{title}</div>
+          <div className="text-lg font-bold">{title}</div>
           <div className="text-sm text-slate-500 mt-1">{description}</div>
         </div>
         {badge && <div className="text-xs px-2 py-1 rounded bg-gray-100 ml-4">{badge}</div>}

@@ -27,7 +27,7 @@ const ActivityItem: React.FC<{ a: Activity }> = ({ a }) => {
 
 const ActivityList: React.FC<{ activities: Activity[] }> = ({ activities }) => {
   if (!activities?.length) {
-    return <div className="text-sm text-slate-500">Nenhuma atividade ainda. Crie seu primeiro vídeo!</div>;
+    return <div className="text-sm text-slate-500">Nenhuma atividade ainda. Crie seu primeiro vídeo no ScriptAI ou no PostRápido!</div>;
   }
 
   return (

@@ -55,8 +55,8 @@ const Module2Page: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <Link to="/dashboard" className="text-sm text-slate-500 underline">← Voltar</Link>
-            <h1 className="text-2xl font-bold mt-2">Módulo 2: Upload + Edição</h1>
-            <p className="text-sm text-slate-500 mt-1">Faça upload, adicione legendas e edite descrições do seu vídeo</p>
+            <h1 className="text-2xl font-bold mt-2">⚡ PostRápido</h1>
+            <p className="text-sm text-slate-500 mt-1">Upload, legendas e agendamento</p>
           </div>
           <div className="text-sm text-slate-500">Passo {step} de 3</div>
         </div>
