@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../integrations/supabase/client";
 import { useAuthStore } from "../stores/authStore";
-import { updateVideoWithAvatar, saveGeneratedVideo, incrementCreditsUsed } from "../services/avatar";
+import { updateVideoWithAvatar, saveGeneratedVideo, incrementCreditsUsed } from "@/services/avatar";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 
 export type Avatar = {
