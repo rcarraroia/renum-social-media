@@ -162,8 +162,6 @@ export function useDashboard() {
     queryFn: fetchDashboard,
     enabled: !!orgId,
     staleTime: 30000,
-    // react-query v5 renamed cacheTime -> cacheDuration
-    cacheDuration: 5 * 60 * 1000,
     refetchInterval: 30000,
   });
 
