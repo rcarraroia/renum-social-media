@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createResearchVideo, saveGeneratedScript } from "../services";
+import { createResearchVideo, saveGeneratedScript } from "../services/research";
 import { useAuthStore } from "../stores/authStore";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 
@@ -111,7 +111,7 @@ export function useResearch() {
     // MOCK
     setTimeout(() => {
       dismissToast(toastId);
-      setScript((s) => s + "\n\n(versão regenerada)");
+      setScript((s) => s + "\n\n(versão regenerada)"); // small variation
       setStatus("ready");
       showSuccess("✅ Novo script gerado (mock)");
     }, 2000);
