@@ -1,9 +1,49 @@
 import React from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
+import ProfileSelector from "@/components/onboarding/ProfileSelector";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  const orgId = user?.organization_id;
+  const [profiles, setProfiles] = React.useState<string[]>((user as any)?.organization?.user_profiles ?? []);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    setProfiles((user as any)?.organization?.user_profiles ?? []);
+  }, [user?.organization?.user_profiles]);
+
+  const saveProfiles = async () => {
+    if (!orgId) {
+      showError("Organização não encontrada");
+      return;
+    }
+    setSaving(true);
+    const toastId = showLoading("Salvando perfis...");
+    try {
+      const res: any = await (supabase.from("organizations") as any)
+        .update({
+          user_profiles: profiles,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orgId)
+        .select()
+        .single();
+      dismissToast(toastId);
+      if (res?.error) {
+        showError("Erro ao salvar perfis");
+      } else {
+        showSuccess("Perfis atualizados!");
+      }
+    } catch (err: any) {
+      dismissToast(toastId);
+      showError("Erro ao salvar perfis");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -22,8 +62,15 @@ const Settings: React.FC = () => {
               <input defaultValue={user?.email ?? ""} disabled className="mt-1 w-full rounded-md border p-2 bg-slate-50" />
             </div>
           </div>
-          <div className="mt-4">
-            <button disabled className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-50">Salvar</button>
+
+          <div className="mt-6">
+            <h4 className="font-medium mb-2">Perfis Profissionais</h4>
+            <p className="text-sm text-slate-500 mb-3">Selecione os perfis que descrevem sua atuação — isso personaliza scripts e sugestões.</p>
+            <ProfileSelector value={profiles} onChange={setProfiles} />
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => { setProfiles((user as any)?.organization?.user_profiles ?? []); }} className="px-3 py-1 rounded bg-gray-100">Cancelar</button>
+              <button onClick={saveProfiles} disabled={saving} className="px-4 py-2 rounded bg-indigo-600 text-white">{saving ? "Salvando..." : "Salvar Alterações"}</button>
+            </div>
           </div>
         </section>
 

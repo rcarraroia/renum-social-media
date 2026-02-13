@@ -11,6 +11,7 @@ export interface Organization {
   metricool_blog_id?: number | null;
   heygen_api_key?: string | null;
   opusclip_api_key?: string | null;
+  user_profiles?: string[] | null; // added: array of profile ids
   created_at?: string | null;
   updated_at?: string | null;
 }

@@ -2,9 +2,10 @@ import { create } from "zustand";
 import type { UsersRow } from "@/types/database.types";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUser } from "@/services/auth";
+import type { AuthenticatedUser } from "@/types/auth";
 
 type AuthState = {
-  user: (UsersRow & { id: string; email: string }) | null;
+  user: AuthenticatedUser | null;
   loading: boolean;
   initialized: boolean;
   setUser: (u: AuthState["user"]) => void;
