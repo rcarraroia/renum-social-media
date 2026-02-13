@@ -194,7 +194,7 @@ ALTER TABLE api_logs ENABLE ROW LEVEL SECURITY;
 -- ================================================
 -- POLICY: organizations
 -- ================================================
-CREATE POLICY IF NOT EXISTS "Users can view their own organization"
+CREATE POLICY "Users can view their own organization"
     ON organizations FOR SELECT
     USING (
         id IN (
@@ -202,7 +202,7 @@ CREATE POLICY IF NOT EXISTS "Users can view their own organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can update their own organization"
+CREATE POLICY "Users can update their own organization"
     ON organizations FOR UPDATE
     USING (
         id IN (
@@ -213,7 +213,7 @@ CREATE POLICY IF NOT EXISTS "Users can update their own organization"
 -- ================================================
 -- POLICY: users
 -- ================================================
-CREATE POLICY IF NOT EXISTS "Users can view users in their organization"
+CREATE POLICY "Users can view users in their organization"
     ON users FOR SELECT
     USING (
         organization_id IN (
@@ -221,14 +221,14 @@ CREATE POLICY IF NOT EXISTS "Users can view users in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can update their own profile"
+CREATE POLICY "Users can update their own profile"
     ON users FOR UPDATE
     USING (id = auth.uid());
 
 -- ================================================
 -- POLICY: videos
 -- ================================================
-CREATE POLICY IF NOT EXISTS "Users can view videos in their organization"
+CREATE POLICY "Users can view videos in their organization"
     ON videos FOR SELECT
     USING (
         organization_id IN (
@@ -236,7 +236,7 @@ CREATE POLICY IF NOT EXISTS "Users can view videos in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can insert videos in their organization"
+CREATE POLICY "Users can insert videos in their organization"
     ON videos FOR INSERT
     WITH CHECK (
         organization_id IN (
@@ -244,7 +244,7 @@ CREATE POLICY IF NOT EXISTS "Users can insert videos in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can update videos in their organization"
+CREATE POLICY "Users can update videos in their organization"
     ON videos FOR UPDATE
     USING (
         organization_id IN (
@@ -252,7 +252,7 @@ CREATE POLICY IF NOT EXISTS "Users can update videos in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can delete videos in their organization"
+CREATE POLICY "Users can delete videos in their organization"
     ON videos FOR DELETE
     USING (
         organization_id IN (
@@ -262,8 +262,8 @@ CREATE POLICY IF NOT EXISTS "Users can delete videos in their organization"
 
 -- ================================================
 -- POLICY: posts
--- ================================================
-CREATE POLICY IF NOT EXISTS "Users can view posts in their organization"
+-- ====================================
+CREATE POLICY "Users can view posts in their organization"
     ON posts FOR SELECT
     USING (
         organization_id IN (
@@ -271,7 +271,7 @@ CREATE POLICY IF NOT EXISTS "Users can view posts in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can insert posts in their organization"
+CREATE POLICY "Users can insert posts in their organization"
     ON posts FOR INSERT
     WITH CHECK (
         organization_id IN (
@@ -279,7 +279,7 @@ CREATE POLICY IF NOT EXISTS "Users can insert posts in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can update posts in their organization"
+CREATE POLICY "Users can update posts in their organization"
     ON posts FOR UPDATE
     USING (
         organization_id IN (
@@ -287,7 +287,7 @@ CREATE POLICY IF NOT EXISTS "Users can update posts in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Users can delete posts in their organization"
+CREATE POLICY "Users can delete posts in their organization"
     ON posts FOR DELETE
     USING (
         organization_id IN (
@@ -298,7 +298,7 @@ CREATE POLICY IF NOT EXISTS "Users can delete posts in their organization"
 -- ================================================
 -- POLICY: api_logs
 -- ================================================
-CREATE POLICY IF NOT EXISTS "Users can view api_logs in their organization"
+CREATE POLICY "Users can view api_logs in their organization"
     ON api_logs FOR SELECT
     USING (
         organization_id IN (
@@ -306,7 +306,7 @@ CREATE POLICY IF NOT EXISTS "Users can view api_logs in their organization"
         )
     );
 
-CREATE POLICY IF NOT EXISTS "System can insert api_logs"
+CREATE POLICY "System can insert api_logs"
     ON api_logs FOR INSERT
     WITH CHECK (true);
 
