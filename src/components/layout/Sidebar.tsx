@@ -16,6 +16,7 @@ const Sidebar: React.FC = () => {
     <aside className="w-64 bg-white border-r min-h-[calc(100vh-64px)] p-4">
       <nav className="space-y-2">
         <NavLink to="/dashboard">Dashboard</NavLink>
+        <NavLink to="/modules/2">Módulo 2</NavLink>
         <NavLink to="/settings">Settings</NavLink>
       </nav>
 

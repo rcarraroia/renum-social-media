@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Onboarding from "@/pages/Onboarding";
+import Module2 from "@/pages/Module2";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,16 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Module 2 */}
+          <Route
+            path="/modules/2"
+            element={
+              <ProtectedRoute>
+                <Module2 />
               </ProtectedRoute>
             }
           />
