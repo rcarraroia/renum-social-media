@@ -1,13 +1,11 @@
-Connect Socials -> HeyGen (pro only) -> Done. No Metricool/OpusClip references.">
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
-import { ModuleCard } from "@/components/dashboard";
 import ProfileSelector from "@/components/onboarding/ProfileSelector";
 import MainLayout from "@/components/layout/MainLayout";
-import SocialAccountCard from "@/components/settings/SocialAccountCard";
+import SocialAccountCard from "../components/settings/SocialAccountCard";
 
 /**
  * Onboarding restructured:
@@ -192,7 +190,6 @@ const Onboarding: React.FC = () => {
   };
 
   const finishOnboarding = () => {
-    // Save anything else if needed and redirect
     showSuccess("Onboarding finalizado!");
     navigate("/dashboard");
   };
@@ -244,10 +241,7 @@ const Onboarding: React.FC = () => {
               <div className="mt-6 flex justify-between">
                 <button onClick={() => navigate("/dashboard")} className="px-4 py-2 border rounded">Pular</button>
                 <div className="space-x-2">
-                  <button onClick={() => {
-                    setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]);
-                    setStep(2);
-                  }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
+                  <button onClick={() => { setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]); setStep(2); }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
                   <button onClick={handleCompleteProfiles} className="px-4 py-2 bg-indigo-600 text-white rounded">Salvar e Continuar →</button>
                 </div>
               </div>

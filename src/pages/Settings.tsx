@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ProfileSelector from "@/components/onboarding/ProfileSelector";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
-import SocialAccountCard from "@/components/settings/SocialAccountCard";
+import SocialAccountCard from "../components/settings/SocialAccountCard";
 import { useEffect, useState } from "react";
 
 /**
