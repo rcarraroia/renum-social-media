@@ -81,10 +81,10 @@ const Module2Page: React.FC = () => {
         </div>
 
         {/* Stepper */}
-        <div className="flex gap-2 items-center">
-          <div className={`px-3 py-1 rounded ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Upload</div>
-          <div className={`px-3 py-1 rounded ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Preview</div>
-          <div className={`px-3 py-1 rounded ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Edição</div>
+        <div className="flex gap-2 items-center overflow-x-auto pb-2">
+          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Upload</div>
+          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Preview</div>
+          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Edição</div>
         </div>
 
         {/* Content */}

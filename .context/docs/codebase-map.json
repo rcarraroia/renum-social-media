@@ -1,0 +1,889 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-13T22:07:36.521Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "vite"
+    ],
+    "testFrameworks": [],
+    "packageManager": "pnpm",
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 105,
+    "topDirectories": [
+      {
+        "name": "AI_RULES.md",
+        "fileCount": 1
+      },
+      {
+        "name": "components.json",
+        "fileCount": 1
+      },
+      {
+        "name": "eslint.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "index.html",
+        "fileCount": 1
+      },
+      {
+        "name": "install-mcp-dependencies.ps1",
+        "fileCount": 1
+      },
+      {
+        "name": "MCP_SETUP.md",
+        "fileCount": 1
+      },
+      {
+        "name": "package-lock.json",
+        "fileCount": 1
+      },
+      {
+        "name": "package.json",
+        "fileCount": 1
+      },
+      {
+        "name": "pnpm-lock.yaml",
+        "fileCount": 1
+      },
+      {
+        "name": "postcss.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "public",
+        "fileCount": 5
+      },
+      {
+        "name": "README.md",
+        "fileCount": 1
+      },
+      {
+        "name": "src",
+        "fileCount": 80
+      },
+      {
+        "name": "tailwind.config.ts",
+        "fileCount": 1
+      },
+      {
+        "name": "test-auth-fix.html",
+        "fileCount": 1
+      },
+      {
+        "name": "TESTE_TAVILY_MCP.md",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.app.json",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.json",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.node.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vercel.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vite.config.ts",
+        "fileCount": 1
+      },
+      {
+        "name": "WINDOWS_MCP_SETUP.md",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".tsx",
+        "count": 64
+      },
+      {
+        "extension": ".ts",
+        "count": 16
+      },
+      {
+        "extension": ".json",
+        "count": 8
+      },
+      {
+        "extension": ".md",
+        "count": 5
+      },
+      {
+        "extension": ".js",
+        "count": 3
+      },
+      {
+        "extension": ".html",
+        "count": 2
+      },
+      {
+        "extension": ".css",
+        "count": 2
+      },
+      {
+        "extension": ".yaml",
+        "count": 1
+      },
+      {
+        "extension": ".ps1",
+        "count": 1
+      },
+      {
+        "extension": ".txt",
+        "count": 1
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src\\utils",
+          "src\\lib"
+        ],
+        "symbolCount": 2,
+        "dependsOn": []
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "src\\types"
+        ],
+        "symbolCount": 8,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "src\\services",
+          "public"
+        ],
+        "symbolCount": 9,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "src\\components\\ui",
+          "src\\pages",
+          "src\\components",
+          "src\\components\\layout",
+          "src\\components\\auth"
+        ],
+        "symbolCount": 25,
+        "dependsOn": []
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "src\\components\\auth"
+        ],
+        "symbolCount": 1,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Service Layer",
+        "confidence": 0.85,
+        "description": "Encapsulates business logic in service classes",
+        "occurrences": 1
+      }
+    ],
+    "entryPoints": [
+      "src\\main.tsx"
+    ]
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "OpusClipService",
+        "kind": "class",
+        "file": "src\\services\\opusclip.ts",
+        "line": 32,
+        "exported": true
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "ApiLogsRow",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 70,
+        "exported": true
+      },
+      {
+        "name": "BadgeProps",
+        "kind": "interface",
+        "file": "src\\components\\ui\\badge.tsx",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "ButtonProps",
+        "kind": "interface",
+        "file": "src\\components\\ui\\button.tsx",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "CreateProjectRequest",
+        "kind": "interface",
+        "file": "src\\services\\opusclip.ts",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "Database",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 87,
+        "exported": true
+      },
+      {
+        "name": "OpusClipClip",
+        "kind": "interface",
+        "file": "src\\services\\opusclip.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "OpusClipProject",
+        "kind": "interface",
+        "file": "src\\services\\opusclip.ts",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "OrganizationsRow",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "PostsRow",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 56,
+        "exported": true
+      },
+      {
+        "name": "TextareaProps",
+        "kind": "interface",
+        "file": "src\\components\\ui\\textarea.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "UsersRow",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "UserWithOrganization",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "VideosRow",
+        "kind": "interface",
+        "file": "src\\types\\database.types.ts",
+        "line": 38,
+        "exported": true
+      },
+      {
+        "name": "State",
+        "kind": "interface",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 49,
+        "exported": false
+      }
+    ],
+    "functions": [
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "src\\lib\\utils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "formatDateShort",
+        "kind": "function",
+        "file": "src\\utils\\formatters.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "getCurrentUser",
+        "kind": "function",
+        "file": "src\\services\\auth.ts",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "signIn",
+        "kind": "function",
+        "file": "src\\services\\auth.ts",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "signOut",
+        "kind": "function",
+        "file": "src\\services\\auth.ts",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "signUp",
+        "kind": "function",
+        "file": "src\\services\\auth.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "updateLastLogin",
+        "kind": "function",
+        "file": "src\\services\\auth.ts",
+        "line": 57,
+        "exported": true
+      },
+      {
+        "name": "useAuth",
+        "kind": "function",
+        "file": "src\\hooks\\useAuth.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "useIsMobile",
+        "kind": "function",
+        "file": "src\\hooks\\use-mobile.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "useOrganization",
+        "kind": "function",
+        "file": "src\\hooks\\useOrganization.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "Badge",
+        "kind": "function",
+        "file": "src\\components\\ui\\badge.tsx",
+        "line": 31,
+        "exported": false
+      },
+      {
+        "name": "dispatch",
+        "kind": "function",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 130,
+        "exported": false
+      },
+      {
+        "name": "genId",
+        "kind": "function",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 24,
+        "exported": false
+      },
+      {
+        "name": "Skeleton",
+        "kind": "function",
+        "file": "src\\components\\ui\\skeleton.tsx",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "SupabaseAuthListener",
+        "kind": "function",
+        "file": "src\\main.tsx",
+        "line": 9,
+        "exported": false
+      },
+      {
+        "name": "toast",
+        "kind": "function",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 139,
+        "exported": false
+      },
+      {
+        "name": "useCarousel",
+        "kind": "function",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 33,
+        "exported": false
+      },
+      {
+        "name": "useChart",
+        "kind": "function",
+        "file": "src\\components\\ui\\chart.tsx",
+        "line": 25,
+        "exported": false
+      },
+      {
+        "name": "useSidebar",
+        "kind": "function",
+        "file": "src\\components\\ui\\sidebar.tsx",
+        "line": 39,
+        "exported": false
+      },
+      {
+        "name": "useToast",
+        "kind": "function",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 168,
+        "exported": false
+      }
+    ],
+    "types": [
+      {
+        "name": "CalendarProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\calendar.tsx",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "ChartConfig",
+        "kind": "type",
+        "file": "src\\components\\ui\\chart.tsx",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "Json",
+        "kind": "type",
+        "file": "src\\types\\database.types.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "Action",
+        "kind": "type",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 31,
+        "exported": false
+      },
+      {
+        "name": "ActionType",
+        "kind": "type",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 29,
+        "exported": false
+      },
+      {
+        "name": "AuthState",
+        "kind": "type",
+        "file": "src\\stores\\authStore.ts",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "CarouselApi",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 10,
+        "exported": false
+      },
+      {
+        "name": "CarouselContextProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 22,
+        "exported": false
+      },
+      {
+        "name": "CarouselOptions",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 12,
+        "exported": false
+      },
+      {
+        "name": "CarouselPlugin",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 13,
+        "exported": false
+      },
+      {
+        "name": "CarouselProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 15,
+        "exported": false
+      },
+      {
+        "name": "ChartContextProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\chart.tsx",
+        "line": 19,
+        "exported": false
+      },
+      {
+        "name": "FormData",
+        "kind": "type",
+        "file": "src\\components\\auth\\SignupForm.tsx",
+        "line": 27,
+        "exported": false
+      },
+      {
+        "name": "FormData",
+        "kind": "type",
+        "file": "src\\components\\auth\\LoginForm.tsx",
+        "line": 13,
+        "exported": false
+      },
+      {
+        "name": "FormFieldContextValue",
+        "kind": "type",
+        "file": "src\\components\\ui\\form.tsx",
+        "line": 18,
+        "exported": false
+      },
+      {
+        "name": "FormItemContextValue",
+        "kind": "type",
+        "file": "src\\components\\ui\\form.tsx",
+        "line": 65,
+        "exported": false
+      },
+      {
+        "name": "PaginationLinkProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\pagination.tsx",
+        "line": 37,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "type",
+        "file": "src\\components\\layout\\MainLayout.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "type",
+        "file": "src\\components\\auth\\ProtectedRoute.tsx",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "SidebarContext",
+        "kind": "type",
+        "file": "src\\components\\ui\\sidebar.tsx",
+        "line": 27,
+        "exported": false
+      },
+      {
+        "name": "Toast",
+        "kind": "type",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 137,
+        "exported": false
+      },
+      {
+        "name": "ToasterProps",
+        "kind": "type",
+        "file": "src\\components\\ui\\sonner.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "ToasterToast",
+        "kind": "type",
+        "file": "src\\hooks\\use-toast.ts",
+        "line": 8,
+        "exported": false
+      },
+      {
+        "name": "UseCarouselParameters",
+        "kind": "type",
+        "file": "src\\components\\ui\\carousel.tsx",
+        "line": 11,
+        "exported": false
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "ApiLogsRow",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 70,
+      "exported": true
+    },
+    {
+      "name": "BadgeProps",
+      "kind": "interface",
+      "file": "src\\components\\ui\\badge.tsx",
+      "line": 26,
+      "exported": true
+    },
+    {
+      "name": "ButtonProps",
+      "kind": "interface",
+      "file": "src\\components\\ui\\button.tsx",
+      "line": 36,
+      "exported": true
+    },
+    {
+      "name": "CalendarProps",
+      "kind": "type",
+      "file": "src\\components\\ui\\calendar.tsx",
+      "line": 8,
+      "exported": true
+    },
+    {
+      "name": "ChartConfig",
+      "kind": "type",
+      "file": "src\\components\\ui\\chart.tsx",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "cn",
+      "kind": "function",
+      "file": "src\\lib\\utils.ts",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "CreateProjectRequest",
+      "kind": "interface",
+      "file": "src\\services\\opusclip.ts",
+      "line": 24,
+      "exported": true
+    },
+    {
+      "name": "Database",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 87,
+      "exported": true
+    },
+    {
+      "name": "formatDateShort",
+      "kind": "function",
+      "file": "src\\utils\\formatters.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "getCurrentUser",
+      "kind": "function",
+      "file": "src\\services\\auth.ts",
+      "line": 24,
+      "exported": true
+    },
+    {
+      "name": "Json",
+      "kind": "type",
+      "file": "src\\types\\database.types.ts",
+      "line": 2,
+      "exported": true
+    },
+    {
+      "name": "OpusClipClip",
+      "kind": "interface",
+      "file": "src\\services\\opusclip.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "OpusClipProject",
+      "kind": "interface",
+      "file": "src\\services\\opusclip.ts",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "OpusClipService",
+      "kind": "class",
+      "file": "src\\services\\opusclip.ts",
+      "line": 32,
+      "exported": true
+    },
+    {
+      "name": "OrganizationsRow",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "PostsRow",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 56,
+      "exported": true
+    },
+    {
+      "name": "signIn",
+      "kind": "function",
+      "file": "src\\services\\auth.ts",
+      "line": 15,
+      "exported": true
+    },
+    {
+      "name": "signOut",
+      "kind": "function",
+      "file": "src\\services\\auth.ts",
+      "line": 20,
+      "exported": true
+    },
+    {
+      "name": "signUp",
+      "kind": "function",
+      "file": "src\\services\\auth.ts",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "TextareaProps",
+      "kind": "interface",
+      "file": "src\\components\\ui\\textarea.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "updateLastLogin",
+      "kind": "function",
+      "file": "src\\services\\auth.ts",
+      "line": 57,
+      "exported": true
+    },
+    {
+      "name": "useAuth",
+      "kind": "function",
+      "file": "src\\hooks\\useAuth.ts",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "useIsMobile",
+      "kind": "function",
+      "file": "src\\hooks\\use-mobile.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "useOrganization",
+      "kind": "function",
+      "file": "src\\hooks\\useOrganization.ts",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "UsersRow",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 23,
+      "exported": true
+    },
+    {
+      "name": "UserWithOrganization",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 34,
+      "exported": true
+    },
+    {
+      "name": "VideosRow",
+      "kind": "interface",
+      "file": "src\\types\\database.types.ts",
+      "line": 38,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\hooks\\useAuth.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\App.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\globals.css",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\Index.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\NotFound.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\Login.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\Signup.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\Dashboard.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\pages\\Settings.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\components\\layout\\Navbar.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "E:\\PROJETOS SITE\\repositorios\\renum-social-media\\src\\components\\layout\\Sidebar.tsx",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 59,
+    "exportedSymbols": 27,
+    "analysisTimeMs": 914
+  }
+}

@@ -51,8 +51,8 @@ const VideoUpload: React.FC<Props> = ({ onFileSelected, status = "idle", progres
     <div>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition ${isDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"}`}
-        style={{ minHeight: 220 }}
+        className={`border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition ${isDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"}`}
+        style={{ minHeight: window.innerWidth < 768 ? 160 : 220 }}
       >
         <input {...getInputProps()} />
         <div className="text-4xl">📹</div>

@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "tavily-remote": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.tavily.com/mcp/?tavilyApiKey=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"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "metricool": {
+      "command": "uvx",
+      "args": ["mcp-metricool"],
+      "env": {
+        "METRICOOL_USER_TOKEN": "YOUR_METRICOOL_TOKEN_HERE",
+        "METRICOOL_USER_ID": "YOUR_METRICOOL_USER_ID_HERE"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "heygen": {
+      "command": "uvx",
+      "args": ["heygen-mcp"],
+      "env": {
+        "HEYGEN_API_KEY": "sk_V2_hgu_kOR3Anr3t1G_r2i84woGDFdQHFlR888TjsRm7x5ViUcS"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

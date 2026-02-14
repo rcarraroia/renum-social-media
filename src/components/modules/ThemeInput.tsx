@@ -60,7 +60,7 @@ const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, 
 
         <div className="mt-4">
           <div className="text-sm font-medium">Público-alvo</div>
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {audiences.map((a) => (
               <button
                 key={a.value}
@@ -103,12 +103,12 @@ const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, 
           )}
         </div>
 
-        <div className="mt-4 flex justify-between items-center">
-          <button onClick={() => window.history.back()} className="px-3 py-2 rounded bg-gray-100">Cancelar</button>
+        <div className="mt-4 flex justify-between items-center gap-3">
+          <button onClick={() => window.history.back()} className="px-3 py-2 rounded bg-gray-100 min-h-[44px]">Cancelar</button>
           <button
             onClick={() => createScript()}
             disabled={loading || !isValid}
-            className={`px-4 py-2 rounded ${loading || !isValid ? "bg-indigo-200 text-white cursor-not-allowed" : "bg-indigo-600 text-white"}`}
+            className={`px-4 py-2 rounded min-h-[44px] ${loading || !isValid ? "bg-indigo-200 text-white cursor-not-allowed" : "bg-indigo-600 text-white"}`}
           >
             {loading ? "Processando..." : "🔍 Criar Script →"}
           </button>

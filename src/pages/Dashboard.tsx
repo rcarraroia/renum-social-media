@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
             <p className="text-sm text-slate-500">Visão geral rápida do seu workspace</p>
           </div>
           <div>
-            <button onClick={() => refresh()} className="px-3 py-1 rounded bg-gray-100 text-sm">Atualizar</button>
+            <button onClick={() => refresh()} className="px-3 py-2 rounded bg-gray-100 text-sm min-h-[44px]">Atualizar</button>
           </div>
         </div>
 

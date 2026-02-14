@@ -27,7 +27,7 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto space-y-4 bg-white p-6 rounded-lg shadow">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full md:max-w-md mx-auto space-y-4 bg-white p-4 md:p-6 rounded-lg shadow">
       <h2 className="text-2xl font-semibold text-indigo-700">Entrar</h2>
 
       <div>
@@ -40,7 +40,7 @@ const LoginForm: React.FC = () => {
         <label className="block text-sm font-medium text-slate-700">Senha</label>
         <div className="relative">
           <input type={showPassword ? "text" : "password"} {...register("password")} className="mt-1 block w-full rounded-md border p-2 pr-10" />
-          <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-2 top-2 text-sm text-slate-500">
+          <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-2 top-2 text-sm text-slate-500 min-h-[44px] min-w-[44px] flex items-center justify-center">
             {showPassword ? "Ocultar" : "Mostrar"}
           </button>
         </div>

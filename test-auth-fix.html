@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste - Hook useAuth Corrigido</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste: Hook useAuth Corrigido</h1>
+    
+    <h2>✅ Correções Implementadas:</h2>
+    <ul>
+        <li class="success">✅ Hook useAuth agora busca dados da organization</li>
+        <li class="success">✅ Query Supabase modificada com JOIN</li>
+        <li class="success">✅ Tipos TypeScript atualizados</li>
+        <li class="success">✅ Dashboard mostra plano dinâmico</li>
+        <li class="success">✅ Settings mostra plano dinâmico</li>
+        <li class="success">✅ Hook useOrganization criado</li>
+    </ul>
+
+    <h2>🎯 Para Testar:</h2>
+    <ol>
+        <li>Acesse: <a href="http://localhost:8081/" target="_blank">http://localhost:8081/</a></li>
+        <li>Faça login com: <strong>rcarrarocoach@gmail.com</strong></li>
+        <li>Abra DevTools (F12) → Console</li>
+        <li>Execute no console:</li>
+    </ol>
+
+    <pre><code>// Verificar dados do usuário
+console.log('User:', window.user);
+console.log('Organization:', window.user?.organization);
+console.log('Plan:', window.user?.organization?.plan);
+
+// Deve retornar: "pro"
+</code></pre>
+
+    <h2>📊 Resultados Esperados:</h2>
+    <ul>
+        <li class="info">Dashboard → "Plano atual: <strong>Pro</strong>" (não mais "Free")</li>
+        <li class="info">Settings → "Plano atual: <strong>Pro</strong>" (não mais "Free")</li>
+        <li class="info">Console → <code>user.organization.plan = "pro"</code></li>
+    </ul>
+
+    <h2>🚀 Próximos Passos:</h2>
+    <p>Após validar que o hook está funcionando, podemos:</p>
+    <ol>
+        <li>Criar o Módulo 3 (Avatar AI)</li>
+        <li>Implementar verificação de plano</li>
+        <li>Adicionar rota /module-3/avatar-ai</li>
+        <li>Tornar Sidebar navegável</li>
+    </ol>
+
+    <p><strong>Status:</strong> <span class="success">Hook useAuth CORRIGIDO ✅</span></p>
+</body>
+</html>

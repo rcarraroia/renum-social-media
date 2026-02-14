@@ -49,7 +49,7 @@ const CalendarGrid: React.FC<Props> = ({ month, postsByDay, onDateClick, onPostC
             return (
               <div
                 key={key}
-                className={`min-h-[110px] p-2 rounded-md border ${inMonth ? "bg-white" : "bg-slate-50 text-slate-400"}`}
+                className={`min-h-[80px] md:min-h-[110px] p-2 rounded-md border ${inMonth ? "bg-white" : "bg-slate-50 text-slate-400"}`}
                 onClick={() => onDateClick(day)}
               >
                 <div className="flex items-start justify-between">

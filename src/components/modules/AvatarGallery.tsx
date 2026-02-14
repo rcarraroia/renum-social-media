@@ -46,7 +46,7 @@ const AvatarGallery: React.FC<Props> = ({ selected, onSelect }) => {
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="text-sm text-slate-600 mb-3">🎭 Selecione o avatar</div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {MOCK_AVATARS.map((a) => {
           const active = selected?.id === a.id;
           return (
