@@ -2,113 +2,105 @@ import React from "react";
 import { showLoading, dismissToast, showError } from "@/utils/toast";
 
 type Props = {
-  initial?: {
-    instagram?: string;
-    tiktok?: string;
-    facebook?: string;
-  } | null;
-  onSave: (descriptions: { instagram: string; tiktok: string; facebook: string }) => Promise<any>;
+  platforms: Array<{ key: string; label: string }>;
+  initial?: Record<string, string> | null;
+  onSave: (descriptions: Record<string, string>) => Promise<any>;
   onBack?: () => void;
 };
 
-const LIMITS = {
+const PLATFORM_LIMITS: Record<string, number> = {
+  linkedin: 3000,
+  x: 280,
   instagram: 2200,
   tiktok: 2200,
-  facebook: 5000,
+  facebook: 63206,
+  youtube: 5000,
 };
+
+const DEFAULT_LIMIT = 2200;
 
 const generateMock = (platform: string) => {
-  if (platform === "instagram") return "Descrição gerada por IA (mock) para Instagram...";
-  if (platform === "tiktok") return "Descrição gerada por IA (mock) para TikTok...";
-  return "Descrição gerada por IA (mock) para Facebook...";
+  return `Descrição gerada por IA (mock) para ${platform}`;
 };
 
-const DescriptionEditor: React.FC<Props> = ({ initial, onSave, onBack }) => {
-  const [instagram, setInstagram] = React.useState(initial?.instagram ?? "");
-  const [tiktok, setTiktok] = React.useState(initial?.tiktok ?? "");
-  const [facebook, setFacebook] = React.useState(initial?.facebook ?? "");
+const DescriptionEditor: React.FC<Props> = ({ platforms = [], initial, onSave, onBack }) => {
+  const initialState = React.useMemo(() => {
+    const obj: Record<string, string> = {};
+    platforms.forEach((p) => {
+      obj[p.key] = initial?.[p.key] ?? "";
+    });
+    return obj;
+  }, [platforms, initial]);
+
+  const [values, setValues] = React.useState<Record<string, string>>(initialState);
   const [saving, setSaving] = React.useState(false);
 
-  const valid =
-    instagram.trim().length > 0 &&
-    instagram.length <= LIMITS.instagram &&
-    tiktok.trim().length > 0 &&
-    tiktok.length <= LIMITS.tiktok &&
-    facebook.trim().length > 0 &&
-    facebook.length <= LIMITS.facebook;
+  React.useEffect(() => {
+    setValues(initialState);
+  }, [initialState]);
 
-  const handleRegenerate = async (platform: string) => {
+  const handleRegenerate = async (platformKey: string) => {
     const toastId = showLoading("Regenerating...");
-    // Mock: replace with different mock content
+    // Mock: generate
     setTimeout(() => {
+      setValues((prev) => ({ ...prev, [platformKey]: generateMock(platformKey) + " (v2)" }));
       dismissToast(toastId);
-      if (platform === "instagram") setInstagram(generateMock(platform) + " (v2)");
-      if (platform === "tiktok") setTiktok(generateMock(platform) + " (v2)");
-      if (platform === "facebook") setFacebook(generateMock(platform) + " (v2)");
-    }, 800);
+    }, 700);
   };
 
   const handleSave = async () => {
-    if (!valid) {
-      showError("Verifique as descrições (formatos/limites)");
+    // validation: ensure char limits are respected
+    const violations = platforms.filter((p) => (values[p.key]?.length ?? 0) > (PLATFORM_LIMITS[p.key] ?? DEFAULT_LIMIT));
+    if (violations.length > 0) {
+      showError(`Algumas descrições excedem o limite: ${violations.map((v) => v.label).join(", ")}`);
       return;
     }
     setSaving(true);
-    const res = await onSave({ instagram, tiktok, facebook });
+    const res = await onSave(values);
     setSaving(false);
     return res;
   };
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-semibold">Instagram</h3>
-            <div className="text-xs text-slate-500">Limite: {LIMITS.instagram} caracteres</div>
-          </div>
-          <div className="text-xs text-slate-400">{instagram.length}/{LIMITS.instagram}</div>
-        </div>
-        <textarea value={instagram} onChange={(e) => setInstagram(e.target.value)} rows={6} className="w-full mt-3 rounded border p-2" />
-        <div className="flex justify-end mt-2">
-          <button onClick={() => handleRegenerate("instagram")} className="px-3 py-1 rounded bg-gray-100 text-sm">🔄 Regerar</button>
-        </div>
-      </div>
+      {platforms.length === 0 && (
+        <div className="bg-yellow-50 p-4 rounded text-sm">Conecte pelo menos uma rede social em Configurações para gerar descrições</div>
+      )}
 
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-semibold">TikTok</h3>
-            <div className="text-xs text-slate-500">Limite: {LIMITS.tiktok} caracteres</div>
-          </div>
-          <div className="text-xs text-slate-400">{tiktok.length}/{LIMITS.tiktok}</div>
-        </div>
-        <textarea value={tiktok} onChange={(e) => setTiktok(e.target.value)} rows={5} className="w-full mt-3 rounded border p-2" />
-        <div className="flex justify-end mt-2">
-          <button onClick={() => handleRegenerate("tiktok")} className="px-3 py-1 rounded bg-gray-100 text-sm">🔄 Regerar</button>
-        </div>
-      </div>
+      {platforms.map((p) => {
+        const limit = PLATFORM_LIMITS[p.key] ?? DEFAULT_LIMIT;
+        const text = values[p.key] ?? "";
+        const over = text.length > limit;
+        return (
+          <div key={p.key} className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-sm font-medium">{p.label}</div>
+                <div className="text-xs text-slate-500">Limite: {limit} caracteres</div>
+              </div>
+              <div className={`text-xs ${over ? "text-red-600" : "text-slate-400"}`}>{text.length}/{limit}</div>
+            </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-semibold">Facebook</h3>
-            <div className="text-xs text-slate-500">Limite: {LIMITS.facebook} caracteres</div>
+            <textarea
+              value={text}
+              onChange={(e) => setValues((s) => ({ ...(s ?? {}), [p.key]: e.target.value }))}
+              rows={Math.max(3, Math.min(8, Math.ceil((text.length || 1) / 120)))}
+              className="w-full mt-3 rounded border p-2"
+            />
+
+            <div className="flex justify-end mt-2 gap-2">
+              <button onClick={() => handleRegenerate(p.key)} className="px-3 py-1 rounded bg-gray-100 text-sm">🔄 Regerar</button>
+            </div>
           </div>
-          <div className="text-xs text-slate-400">{facebook.length}/{LIMITS.facebook}</div>
-        </div>
-        <textarea value={facebook} onChange={(e) => setFacebook(e.target.value)} rows={7} className="w-full mt-3 rounded border p-2" />
-        <div className="flex justify-end mt-2">
-          <button onClick={() => handleRegenerate("facebook")} className="px-3 py-1 rounded bg-gray-100 text-sm">🔄 Regerar</button>
-        </div>
-      </div>
+        );
+      })}
 
       <div className="flex justify-between">
         <div>
-          <button onClick={onBack} className="px-3 py-1 rounded bg-gray-100">← Voltar</button>
+          {onBack && <button onClick={onBack} className="px-3 py-1 rounded bg-gray-100">← Voltar</button>}
         </div>
         <div>
-          <button onClick={handleSave} disabled={!valid || saving} className="px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-60">
             {saving ? "Salvando..." : "💾 Salvar Vídeo"}
           </button>
         </div>

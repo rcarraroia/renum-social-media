@@ -49,6 +49,25 @@ const Module2Page: React.FC = () => {
     navigate("/dashboard");
   };
 
+  // Build platforms list for DescriptionEditor:
+  // Prefer keys from videoData.descriptions if present, otherwise fallback to common platforms
+  const platformsFromData = React.useMemo(() => {
+    const keys = videoData?.descriptions ? Object.keys(videoData.descriptions) : [];
+    if (keys.length === 0) {
+      return [
+        { key: "instagram", label: "Instagram" },
+        { key: "tiktok", label: "TikTok" },
+        { key: "facebook", label: "Facebook" },
+      ];
+    }
+    return keys.map((k: string) => {
+      // human-friendly label
+      const label =
+        k === "x" ? "X" : k === "linkedin" ? "LinkedIn" : k.charAt(0).toUpperCase() + k.slice(1);
+      return { key: k, label };
+    });
+  }, [videoData]);
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6">
@@ -83,7 +102,7 @@ const Module2Page: React.FC = () => {
           {step === 2 && (
             <VideoPreview
               processedUrl={videoData?.video_processed_url ?? videoData?.video_raw_url ?? null}
-              duration={videoData?.duration_seconds ? `${Math.round((videoData.duration_seconds ?? 0) / 60)}:${(videoData.duration_seconds ?? 0) % 60}` : undefined}
+              duration={videoData?.duration_seconds ? `${Math.floor((videoData.duration_seconds ?? 0) / 60)}:${((videoData.duration_seconds ?? 0) % 60).toString().padStart(2, "0")}` : undefined}
               size={undefined}
               onNewUpload={() => {
                 if (confirm("Fazer novo upload descartará o atual. Continuar?")) {
@@ -96,6 +115,7 @@ const Module2Page: React.FC = () => {
 
           {step === 3 && (
             <DescriptionEditor
+              platforms={platformsFromData}
               initial={videoData?.descriptions ?? {
                 instagram: videoData?.descriptions?.instagram ?? "",
                 tiktok: videoData?.descriptions?.tiktok ?? "",
