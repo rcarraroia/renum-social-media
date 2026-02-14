@@ -24,7 +24,6 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Backdrop for mobile when sidebar is open */}
       {isOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black/50 z-40"
@@ -35,10 +34,9 @@ const Sidebar: React.FC = () => {
 
       <aside
         className={[
-          "fixed top-0 left-0 h-screen bg-white z-50 transition-transform duration-300 ease-in-out w-64",
-          // mobile: slide in/out; desktop: always visible (static)
+          "fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white z-50 transition-transform duration-300 ease-in-out w-64",
           isOpen ? "translate-x-0" : "-translate-x-full",
-          "md:translate-x-0 md:static md:block",
+          "md:translate-x-0 md:static md:block md:h-auto md:top-auto",
         ].join(" ")}
         aria-hidden={!isOpen && true}
       >
