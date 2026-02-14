@@ -7,6 +7,9 @@ import PlatformBadge from "../components/calendar/PlatformBadge";
 import { format } from "date-fns";
 import { getAvailableVideos, createScheduledPost, deleteScheduledPost, updateScheduledPost } from "../services/posts";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
+import AIAssistantFAB from "@/components/ui/AIAssistantFAB";
+
+const ALL_PLATFORMS = ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"];
 
 const CalendarPage: React.FC = () => {
   const {
@@ -31,6 +34,8 @@ const CalendarPage: React.FC = () => {
   const [platforms, setPlatforms] = React.useState<string[]>(["instagram"]);
   const [descriptions, setDescriptions] = React.useState<any>({ instagram: "", tiktok: "", facebook: "" });
 
+  const [connectedPlatforms, setConnectedPlatforms] = React.useState<Record<string, boolean>>({});
+
   React.useEffect(() => {
     async function loadVideos() {
       const orgId = (window as any).__DYAD__USER_ORG_ID__ ?? undefined;
@@ -38,6 +43,33 @@ const CalendarPage: React.FC = () => {
       setAvailableVideos(data ?? []);
     }
     loadVideos();
+
+    // load connected platforms
+    (async () => {
+      try {
+        const res = await fetch("/api/integrations/social-accounts");
+        if (res.ok) {
+          const data = await res.json();
+          const map: Record<string, boolean> = {};
+          (data ?? []).forEach((d: any) => {
+            map[d.platform] = !!d.connected;
+          });
+          // ensure all platforms keys exist
+          ALL_PLATFORMS.forEach((p) => {
+            if (map[p] === undefined) map[p] = false;
+          });
+          setConnectedPlatforms(map);
+        } else {
+          const map: Record<string, boolean> = {};
+          ALL_PLATFORMS.forEach((p) => (map[p] = false));
+          setConnectedPlatforms(map);
+        }
+      } catch {
+        const map: Record<string, boolean> = {};
+        ALL_PLATFORMS.forEach((p) => (map[p] = false));
+        setConnectedPlatforms(map);
+      }
+    })();
   }, []);
 
   const onDateClick = (date: Date) => {
@@ -99,7 +131,14 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const platformFilterToggle = (p: string) => {
+  function togglePlatformLocal(p: string) {
+    setPlatforms((prev) => {
+      if (prev.includes(p)) return prev.filter((x) => x !== p);
+      return [...prev, p];
+    });
+  }
+
+  function platformFilterToggle(p: string) {
     setSelectedPlatforms((prev: string[]) => {
       if (prev.includes("all")) {
         if (p === "all") return ["all"];
@@ -113,11 +152,11 @@ const CalendarPage: React.FC = () => {
       }
       return [...prev, p];
     });
-  };
+  }
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">📅 Calendário de Publicações</h1>
@@ -132,22 +171,30 @@ const CalendarPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 rounded bg-slate-100 text-sm">Mês</button>
-            <button className="px-3 py-1 rounded bg-slate-100 text-sm">Semana</button>
-            <button className="px-3 py-1 rounded bg-slate-100 text-sm">Dia</button>
-          </div>
+        {/* Filters: dynamic based on connected platforms */}
+        <div className="flex items-center gap-2 overflow-auto pb-2">
+          <button
+            onClick={() => platformFilterToggle("all")}
+            className={`px-3 py-1 rounded ${selectedPlatforms.includes("all") ? "bg-indigo-600 text-white" : "bg-slate-100"}`}
+          >
+            Todas
+          </button>
 
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-slate-500">Filtros:</div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => platformFilterToggle("all")} className="px-2 py-1 rounded bg-gray-100 text-sm">Todas</button>
-              <button onClick={() => platformFilterToggle("instagram")} className="px-2 py-1 rounded bg-pink-100 text-sm">IG</button>
-              <button onClick={() => platformFilterToggle("tiktok")} className="px-2 py-1 rounded bg-black text-white text-sm">TT</button>
-              <button onClick={() => platformFilterToggle("facebook")} className="px-2 py-1 rounded bg-blue-100 text-sm">FB</button>
-            </div>
-          </div>
+          {ALL_PLATFORMS.map((p) => {
+            const connected = connectedPlatforms[p] ?? false;
+            return (
+              <button
+                key={p}
+                onClick={() => connected && platformFilterToggle(p)}
+                title={connected ? p : "Conecte esta rede em Configurações"}
+                disabled={!connected}
+                className={`px-3 py-1 rounded flex items-center gap-2 text-sm ${selectedPlatforms.includes(p) ? "bg-indigo-600 text-white" : connected ? "bg-white border" : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}
+              >
+                <PlatformBadge platform={p} size="sm" />
+                <span className="capitalize">{p === "x" ? "X" : p}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div>
@@ -210,9 +257,20 @@ const CalendarPage: React.FC = () => {
                     <div>
                       <label className="text-xs text-slate-500">Plataformas</label>
                       <div className="mt-2 flex gap-2 flex-wrap">
-                        <button type="button" onClick={() => togglePlatformLocal("instagram")} className={`px-2 py-1 rounded ${platforms.includes("instagram") ? "bg-pink-500 text-white" : "bg-gray-100"}`}>Instagram</button>
-                        <button type="button" onClick={() => togglePlatformLocal("tiktok")} className={`px-2 py-1 rounded ${platforms.includes("tiktok") ? "bg-black text-white" : "bg-gray-100"}`}>TikTok</button>
-                        <button type="button" onClick={() => togglePlatformLocal("facebook")} className={`px-2 py-1 rounded ${platforms.includes("facebook") ? "bg-blue-600 text-white" : "bg-gray-100"}`}>Facebook</button>
+                        {ALL_PLATFORMS.map((p) => {
+                          const connected = connectedPlatforms[p] ?? false;
+                          return (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => togglePlatformLocal(p)}
+                              disabled={!connected}
+                              className={`px-2 py-1 rounded ${platforms.includes(p) ? "bg-indigo-600 text-white" : connected ? "bg-gray-100" : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}
+                            >
+                              {p === "x" ? "X" : p}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -266,8 +324,8 @@ const CalendarPage: React.FC = () => {
                   <h2 className="text-lg font-semibold">{showDetails.videos?.title ?? "Post"}</h2>
                   <div className="text-sm text-slate-500">Agendado: {format(new Date(showDetails.scheduled_at), "PPPP p")}</div>
                 </div>
-                <div>
-                  <PlatformBadge platform={showDetails.platform} />
+                <div className="flex items-center gap-2">
+                  {Array.isArray(showDetails.platform) ? showDetails.platform.map((p: string) => <PlatformBadge key={p} platform={p} />) : <PlatformBadge platform={showDetails.platform} />}
                 </div>
               </div>
 
@@ -308,15 +366,10 @@ const CalendarPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <AIAssistantFAB />
     </MainLayout>
   );
-
-  function togglePlatformLocal(p: string) {
-    setPlatforms((prev) => {
-      if (prev.includes(p)) return prev.filter((x) => x !== p);
-      return [...prev, p];
-    });
-  }
 };
 
 export default CalendarPage;
