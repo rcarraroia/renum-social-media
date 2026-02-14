@@ -1,2 +1,6 @@
--  const dataArrayRef = React.useRef<Uint8Array | null>(null);
-+  const dataArrayRef = React.useRef<Uint8Array<ArrayBuffer> | null>(null);
+@@
+-  const dataArrayRef = useRef<Uint8Array | null>(null);
++  const dataArrayRef = useRef<Uint8Array | null>(null);
+@@
+-    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
++    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
