@@ -17,16 +17,17 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
-  const frameRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const cleanupAudioGraph = useCallback(() => {
-    if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
     analyserRef.current?.disconnect();
     analyserRef.current = null;
     dataArrayRef.current = null;
+
     audioContextRef.current?.close();
     audioContextRef.current = null;
   }, []);
@@ -60,7 +61,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
       dataArray.length;
     setAudioLevel(Math.min(normalized / 128, 1));
 
-    frameRef.current = requestAnimationFrame(updateAudioLevel);
+    rafRef.current = requestAnimationFrame(updateAudioLevel);
   }, []);
 
   const startRecording = useCallback(async () => {
