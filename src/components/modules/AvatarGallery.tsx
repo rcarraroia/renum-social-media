@@ -1,5 +1,16 @@
 import React from "react";
-import type { Avatar } from "@/hooks/useAvatar";
+
+type Avatar = {
+  id: string;
+  name: string;
+  gender?: string;
+  style?: string;
+  age?: string;
+  thumbnailUrl?: string;
+  previewVideoUrl?: string;
+  language?: string;
+  recommended?: boolean;
+};
 
 const MOCK_AVATARS: Avatar[] = [
   {
