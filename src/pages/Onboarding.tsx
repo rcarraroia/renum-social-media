@@ -1,32 +1,78 @@
-import React, { useState } from "react";
+Connect Socials -> HeyGen (pro only) -> Done. No Metricool/OpusClip references.">
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
-import { saveMetricoolTokens, markOnboardingComplete } from "@/utils/onboarding";
+import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { ModuleCard } from "@/components/dashboard";
 import ProfileSelector from "@/components/onboarding/ProfileSelector";
-import { supabase } from "@/integrations/supabase/client";
+import MainLayout from "@/components/layout/MainLayout";
+import SocialAccountCard from "@/components/settings/SocialAccountCard";
+
+/**
+ * Onboarding restructured:
+ * Step 1: Profile (name + profile selector)
+ * Step 2: Connect Socials (can skip)
+ * Step 3: HeyGen config (only for Pro)
+ * Step 4: Done
+ */
+
+const SOCIAL_PLATFORMS = ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"];
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState<number>(1);
 
-  // Step 2 (new) profiles
+  // Step 1
+  const [fullName, setFullName] = useState<string>(user?.full_name ?? "");
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>((user as any)?.organization?.user_profiles ?? []);
+  const [audience, setAudience] = useState<string>("general");
 
-  // Step 2 metricool fields (shifted to step 3 in this flow)
-  const [metricoolToken, setMetricoolToken] = useState("");
-  const [metricoolUserId, setMetricoolUserId] = useState("");
-  const [metricoolBlogId, setMetricoolBlogId] = useState<string>("");
+  // Step 2 social connections
+  const [socialAccounts, setSocialAccounts] = useState<Record<string, { connected: boolean; accountName?: string | null }>>({});
+  const [socialLoading, setSocialLoading] = useState<Record<string, boolean>>({});
 
-  // Step 4 selected module
-  const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  // Step 3 HeyGen
+  const [heygenApiKey, setHeygenApiKey] = useState("");
+  const [heygenAvatarId, setHeygenAvatarId] = useState("");
+  const [heygenVoiceId, setHeygenVoiceId] = useState("");
+  const [heygenTesting, setHeygenTesting] = useState(false);
+  const [heygenConfigured, setHeygenConfigured] = useState(false);
 
   const orgId = user?.organization_id;
   const userId = user?.id;
 
-  const saveProfilesToOrg = async () => {
+  useEffect(() => {
+    // init social account states (fetch from API or fallback)
+    async function loadSocial() {
+      try {
+        const res = await fetch("/api/integrations/social-accounts");
+        if (res.ok) {
+          const data = await res.json();
+          const map: Record<string, any> = {};
+          (data ?? []).forEach((s: any) => {
+            map[s.platform] = { connected: !!s.connected, accountName: s.accountName ?? null };
+          });
+          SOCIAL_PLATFORMS.forEach((p) => {
+            if (!map[p]) map[p] = { connected: false, accountName: null };
+          });
+          setSocialAccounts(map);
+        } else {
+          const map: Record<string, any> = {};
+          SOCIAL_PLATFORMS.forEach((p) => (map[p] = { connected: false, accountName: null }));
+          setSocialAccounts(map);
+        }
+      } catch {
+        const map: Record<string, any> = {};
+        SOCIAL_PLATFORMS.forEach((p) => (map[p] = { connected: false, accountName: null }));
+        setSocialAccounts(map);
+      }
+    }
+    loadSocial();
+  }, []);
+
+  const saveProfilesToOrg = async (): Promise<boolean> => {
     if (!orgId) {
       showError("Organização não encontrada");
       return false;
@@ -46,46 +92,90 @@ const Onboarding: React.FC = () => {
         showError("Erro ao salvar perfis");
         return false;
       }
-      showSuccess("Perfis salvos!");
       return true;
-    } catch (err: any) {
+    } catch (err) {
       showError("Erro ao salvar perfis");
       return false;
     }
   };
 
-  const handleTestMetricool = async () => {
-    if (!metricoolToken || !metricoolUserId) {
-      showError("Preencha Token e User ID");
+  const connectSocial = async (platform: string) => {
+    setSocialLoading((s) => ({ ...s, [platform]: true }));
+    try {
+      const res = await fetch("/api/integrations/social-accounts/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform }),
+      });
+      if (res.ok) {
+        const j = await res.json();
+        if (j?.redirectUrl) {
+          window.location.href = j.redirectUrl;
+          return;
+        }
+        setSocialAccounts((prev) => ({ ...prev, [platform]: { connected: true, accountName: j?.accountName ?? `@${platform}` } }));
+        showSuccess(`${platform} conectado`);
+      } else {
+        const err = await res.text();
+        showError(err || "Falha ao conectar");
+      }
+    } catch (e) {
+      console.error(e);
+      showError("Erro ao conectar");
+    } finally {
+      setSocialLoading((s) => ({ ...s, [platform]: false }));
+    }
+  };
+
+  const disconnectSocial = async (platform: string) => {
+    if (!confirm("Tem certeza que deseja desconectar esta conta?")) return;
+    setSocialLoading((s) => ({ ...s, [platform]: true }));
+    try {
+      const res = await fetch(`/api/integrations/social-accounts/${platform}`, { method: "DELETE" });
+      if (res.ok) {
+        setSocialAccounts((prev) => ({ ...prev, [platform]: { connected: false, accountName: null } }));
+        showSuccess("Conta desconectada");
+      } else {
+        const err = await res.text();
+        showError(err || "Falha ao desconectar");
+      }
+    } catch (e) {
+      console.error(e);
+      showError("Erro ao desconectar");
+    } finally {
+      setSocialLoading((s) => ({ ...s, [platform]: false }));
+    }
+  };
+
+  const handleHeygenTest = async () => {
+    if (!heygenApiKey || heygenApiKey.trim() === "") {
+      showError("API Key do HeyGen não pode estar vazia");
       return;
     }
-
-    const toastId = showLoading("Testando conexão Metricool...");
+    setHeygenTesting(true);
     try {
-      if (!orgId) throw new Error("Organization ID ausente");
-
-      const { data, error } = await saveMetricoolTokens(orgId, {
-        userToken: metricoolToken,
-        userId: metricoolUserId,
-        blogId: metricoolBlogId ? Number(metricoolBlogId) : undefined,
+      const res = await fetch("/api/integrations/heygen/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: heygenApiKey, avatarId: heygenAvatarId || undefined, voiceId: heygenVoiceId || undefined }),
       });
-
-      dismissToast(toastId);
-
-      if (error) {
-        console.error("Metricool save error:", error);
-        showError("Falha ao conectar Metricool");
+      const j = await res.json();
+      if (res.ok && j?.success) {
+        setHeygenConfigured(true);
+        showSuccess("Conexão HeyGen válida!");
       } else {
-        showSuccess("Metricool conectado com sucesso!");
+        setHeygenConfigured(false);
+        showError(j?.message ?? "Falha ao testar HeyGen");
       }
-    } catch (err: any) {
-      dismissToast(toastId);
-      showError(err?.message ?? "Erro ao testar Metricool");
+    } catch (e) {
+      console.error(e);
+      showError("Erro ao testar HeyGen");
+    } finally {
+      setHeygenTesting(false);
     }
   };
 
   const handleCompleteProfiles = async () => {
-    // must have at least one
     if (!userId) {
       showError("Usuário não encontrado");
       return;
@@ -98,132 +188,176 @@ const Onboarding: React.FC = () => {
     const ok = await saveProfilesToOrg();
     if (!ok) return;
 
-    // move to next step (metricool)
-    setStep(3);
+    setStep(2);
   };
 
-  const handleComplete = () => {
-    if (!userId) {
-      showError("Usuário não encontrado");
-      return;
-    }
-    markOnboardingComplete(userId, selectedModule ?? undefined);
+  const finishOnboarding = () => {
+    // Save anything else if needed and redirect
     showSuccess("Onboarding finalizado!");
     navigate("/dashboard");
   };
 
+  const userPlan = (user?.organization?.plan as "free" | "starter" | "pro") ?? "free";
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-3xl bg-white rounded-lg shadow p-6">
-        <div className="mb-4 text-sm text-slate-500">Passo {step} de 5</div>
-
-        {step === 1 && (
-          <div className="text-center space-y-4">
-            <div className="text-3xl font-bold">Bem-vindo ao RENUM Social AI! 🎉</div>
-            <div className="text-slate-600">Automatize a criação e agendamento de vídeos para redes sociais</div>
-
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border rounded">
-                <div className="text-2xl">✨</div>
-                <div className="font-medium mt-2">Gere scripts com IA</div>
-              </div>
-              <div className="p-4 border rounded">
-                <div className="text-2xl">🎬</div>
-                <div className="font-medium mt-2">Crie vídeos com avatar virtual</div>
-              </div>
-              <div className="p-4 border rounded">
-                <div className="text-2xl">📅</div>
-                <div className="font-medium mt-2">Agende posts automaticamente</div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-center gap-3">
-              <button onClick={() => setStep(2)} className="px-6 py-2 bg-indigo-600 text-white rounded">Começar →</button>
-              <button onClick={() => { if (userId) { markOnboardingComplete(userId); navigate("/dashboard"); } else navigate("/dashboard"); }} className="px-6 py-2 border rounded">Pular por agora</button>
+    <MainLayout>
+      <div className="min-h-screen bg-slate-50 flex items-start justify-center p-4">
+        <div className="w-full max-w-4xl bg-white rounded-lg shadow p-6">
+          {/* Stepper */}
+          <div className="mb-6">
+            <div className="flex gap-2 items-center overflow-auto">
+              <div className={`px-3 py-1 rounded ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Perfil</div>
+              <div className={`px-3 py-1 rounded ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Conectar Redes</div>
+              <div className={`px-3 py-1 rounded ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Avatar AI</div>
+              <div className={`px-3 py-1 rounded ${step === 4 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>4. Pronto</div>
             </div>
           </div>
-        )}
 
-        {step === 2 && (
-          <div>
-            <h3 className="text-xl font-semibold">Passo 2: Configure seus perfis</h3>
-            <p className="text-slate-500 mt-1">Selecione um ou mais perfis que descrevem sua atuação — isso ajuda a gerar scripts mais relevantes.</p>
+          {/* Step content */}
+          {step === 1 && (
+            <div>
+              <h3 className="text-xl font-semibold">Passo 1: Perfil</h3>
+              <p className="text-sm text-slate-500 mt-1">Complete seu perfil para personalizar sugestões.</p>
 
-            <div className="mt-4">
-              <ProfileSelector value={selectedProfiles} onChange={setSelectedProfiles} />
-            </div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm">Nome completo</label>
+                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 w-full rounded border p-2" />
+                </div>
 
-            <div className="mt-4 flex justify-between">
-              <button onClick={() => setStep(1)} className="px-4 py-2 border rounded">← Voltar</button>
-              <div className="space-x-2">
-                <button onClick={() => {
-                  setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]);
-                  setStep(3);
-                }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
-                <button onClick={handleCompleteProfiles} className="px-4 py-2 bg-indigo-600 text-white rounded">Salvar e Continuar →</button>
+                <div>
+                  <label className="block text-sm">Público-alvo</label>
+                  <select value={audience} onChange={(e) => setAudience(e.target.value)} className="mt-1 w-full rounded border p-2">
+                    <option value="mlm">Vendas Diretas (MLM)</option>
+                    <option value="politics">Política</option>
+                    <option value="marketing">Marketing Geral</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="font-medium mb-2">Perfis Profissionais</h4>
+                <ProfileSelector value={selectedProfiles} onChange={setSelectedProfiles} />
+              </div>
+
+              <div className="mt-6 flex justify-between">
+                <button onClick={() => navigate("/dashboard")} className="px-4 py-2 border rounded">Pular</button>
+                <div className="space-x-2">
+                  <button onClick={() => {
+                    setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]);
+                    setStep(2);
+                  }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
+                  <button onClick={handleCompleteProfiles} className="px-4 py-2 bg-indigo-600 text-white rounded">Salvar e Continuar →</button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {step === 3 && (
-          <div>
-            <h3 className="text-xl font-semibold">Conecte sua conta Metricool</h3>
-            <p className="text-slate-500 mt-1">O RENUM usa o Metricool para agendar seus posts.</p>
+          {step === 2 && (
+            <div>
+              <h3 className="text-xl font-semibold">Passo 2: Conectar Redes Sociais</h3>
+              <p className="text-sm text-slate-500 mt-1">Conecte as redes sociais onde você quer publicar seus conteúdos. Você pode pular e conectar depois em Settings.</p>
 
-            <div className="mt-4 grid grid-cols-1 gap-3">
-              <label className="text-sm">User Token</label>
-              <input value={metricoolToken} onChange={(e) => setMetricoolToken(e.target.value)} className="w-full rounded border p-2" />
-              <label className="text-sm mt-2">User ID (numérico)</label>
-              <input value={metricoolUserId} onChange={(e) => setMetricoolUserId(e.target.value)} className="w-full rounded border p-2" />
-              <label className="text-sm mt-2">Blog ID (opcional)</label>
-              <input value={metricoolBlogId} onChange={(e) => setMetricoolBlogId(e.target.value)} className="w-full rounded border p-2" />
-            </div>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {SOCIAL_PLATFORMS.map((p) => {
+                  const s = socialAccounts[p] ?? { connected: false, accountName: null };
+                  return (
+                    <SocialAccountCard
+                      key={p}
+                      platform={p as any}
+                      isConnected={s.connected}
+                      accountName={s.accountName}
+                      connecting={!!socialLoading[p]}
+                      onConnect={() => connectSocial(p)}
+                      onDisconnect={() => disconnectSocial(p)}
+                    />
+                  );
+                })}
+              </div>
 
-            <div className="mt-4 flex justify-between">
-              <button onClick={() => setStep(2)} className="px-4 py-2 border rounded">← Voltar</button>
-              <div className="space-x-2">
-                <button onClick={handleTestMetricool} className="px-4 py-2 bg-gray-100 rounded">Testar Conexão</button>
-                <button onClick={() => setStep(4)} className="px-4 py-2 bg-indigo-600 text-white rounded">Próximo →</button>
+              <div className="mt-6 flex justify-between">
+                <button onClick={() => setStep(1)} className="px-4 py-2 border rounded">← Voltar</button>
+                <div className="space-x-2">
+                  <button onClick={() => setStep(3)} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
+                  <button onClick={() => setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded">Continuar →</button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {step === 4 && (
-          <div>
-            <h3 className="text-xl font-semibold">Escolha o módulo inicial</h3>
-            <p className="text-slate-500 mt-1">Qual módulo você quer usar primeiro?</p>
+          {step === 3 && (
+            <div>
+              <h3 className="text-xl font-semibold">Passo 3: Avatar AI (HeyGen)</h3>
+              {userPlan !== "pro" ? (
+                <div className="mt-4 p-4 border rounded">
+                  <div className="text-lg font-medium">Recursos Pro</div>
+                  <div className="text-sm text-slate-500 mt-2">Crie vídeos com avatar digital usando HeyGen. Faça upgrade para o Plano Pro para acessar.</div>
+                  <div className="mt-4">
+                    <button onClick={() => navigate("/settings?tab=plan")} className="px-4 py-2 bg-indigo-600 text-white rounded">Fazer Upgrade →</button>
+                    <button onClick={() => setStep(4)} className="ml-2 px-4 py-2 border rounded">Pular</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <p className="text-sm text-slate-500">Conecte sua conta HeyGen para gerar vídeos com avatar.</p>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ModuleCard title="📝 ScriptAI" description="Pesquise temas e gere scripts com IA" badge="Novo" onSelect={() => setSelectedModule("scriptai")} />
-              <ModuleCard title="⚡ PostRápido" description="Faça upload, adicione legendas e agende posts" badge="Em breve" onSelect={() => setSelectedModule("postrapido")} />
-              <ModuleCard title="🤖 AvatarAI" description="Crie vídeos com avatar virtual automaticamente" badge="Plano Pro" onSelect={() => setSelectedModule("avatarai")} />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm">API Key</label>
+                      <input type="password" value={heygenApiKey} onChange={(e) => setHeygenApiKey(e.target.value)} className="mt-1 w-full rounded border p-2" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm">Avatar ID</label>
+                      <input value={heygenAvatarId} onChange={(e) => setHeygenAvatarId(e.target.value)} className="mt-1 w-full rounded border p-2" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm">Voice ID</label>
+                      <input value={heygenVoiceId} onChange={(e) => setHeygenVoiceId(e.target.value)} className="mt-1 w-full rounded border p-2" />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={handleHeygenTest} disabled={heygenTesting} className="px-4 py-2 bg-indigo-600 text-white rounded">
+                      {heygenTesting ? "Testando..." : "Testar Conexão"}
+                    </button>
+
+                    <button onClick={() => { alert("HeyGen wizard (placeholder)"); }} className="px-4 py-2 border rounded">Como obter essas informações?</button>
+                    <button onClick={() => setStep(4)} className="ml-auto px-4 py-2 border rounded">Pular</button>
+                  </div>
+                </div>
+              )}
             </div>
+          )}
 
-            <div className="mt-4 flex justify-between">
-              <button onClick={() => setStep(3)} className="px-4 py-2 border rounded">← Voltar</button>
-              <div className="space-x-2">
-                <button onClick={() => { markOnboardingComplete(user?.id ?? ""); navigate("/dashboard"); }} className="px-4 py-2 border rounded">Decidir depois →</button>
-                <button onClick={() => setStep(5)} className="px-4 py-2 bg-indigo-600 text-white rounded">Próximo →</button>
+          {step === 4 && (
+            <div className="text-center">
+              <div className="text-4xl">🎉</div>
+              <h3 className="text-2xl font-bold mt-2">Configuração Completa!</h3>
+              <p className="text-slate-600 mt-2">Resumo rápido do que foi configurado:</p>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3 border rounded">
+                  <div className="font-medium">Redes conectadas</div>
+                  <div className="text-sm text-slate-500 mt-2">{Object.values(socialAccounts || {}).filter((s) => s.connected).length} conectadas</div>
+                </div>
+
+                <div className="p-3 border rounded">
+                  <div className="font-medium">HeyGen configurado</div>
+                  <div className="text-sm text-slate-500 mt-2">{heygenConfigured ? "Sim" : "Não"}</div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-center gap-3">
+                <button onClick={() => finishOnboarding()} className="px-6 py-2 bg-indigo-600 text-white rounded">Ir para Dashboard →</button>
               </div>
             </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div className="text-center">
-            <div className="text-4xl">🎉</div>
-            <h3 className="text-2xl font-bold mt-2">Configuração Completa!</h3>
-            <p className="text-slate-600 mt-2">Sua conta foi configurada com sucesso.</p>
-
-            <div className="mt-6 flex justify-center gap-3">
-              <button onClick={() => handleComplete()} className="px-6 py-2 bg-indigo-600 text-white rounded">Ir para Dashboard →</button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
