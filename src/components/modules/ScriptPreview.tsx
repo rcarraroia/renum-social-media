@@ -13,9 +13,11 @@ const countWords = (text: string) => {
   return text.trim().split(/\s+/).length;
 };
 
-const estimateDuration = (wordCount: number) => {
-  const minutes = Math.floor(wordCount / 150);
-  const seconds = Math.round(((wordCount % 150) / 150) * 60);
+const estimateDuration = (text: string) => {
+  const words = countWords(text);
+  const totalSeconds = Math.round(words * 0.5); // 0.5 seconds per word (spec)
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
@@ -28,7 +30,7 @@ const ScriptPreview: React.FC<Props> = ({ script, onRegenerate, onApprove, onEdi
   }, [script]);
 
   const wordCount = countWords(localScript);
-  const duration = estimateDuration(wordCount);
+  const duration = estimateDuration(localScript);
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">

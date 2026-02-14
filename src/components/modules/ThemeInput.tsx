@@ -1,5 +1,4 @@
 import React from "react";
-import { useResearch } from "@/hooks/useResearch";
 
 type Props = {
   createScript: () => void;
@@ -31,8 +30,10 @@ const audiences = [
   },
 ];
 
-const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, setAudience, loading }) => {
+const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, setAudience, loading = false }) => {
   const [showAdvanced, setShowAdvanced] = React.useState(false);
+
+  const isValid = theme.trim().length >= 10;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -52,6 +53,9 @@ const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, 
             className="mt-2 w-full rounded border p-2"
           />
           <div className="text-xs text-slate-400 mt-1">{theme.length}/200 caracteres</div>
+          {!isValid && theme.length > 0 && (
+            <p className="text-sm text-red-500 mt-2">Mínimo 10 caracteres ({theme.length}/10)</p>
+          )}
         </div>
 
         <div className="mt-4">
@@ -101,7 +105,11 @@ const ThemeInput: React.FC<Props> = ({ createScript, theme, setTheme, audience, 
 
         <div className="mt-4 flex justify-between items-center">
           <button onClick={() => window.history.back()} className="px-3 py-2 rounded bg-gray-100">Cancelar</button>
-          <button onClick={() => createScript()} disabled={loading} className="px-4 py-2 rounded bg-indigo-600 text-white">
+          <button
+            onClick={() => createScript()}
+            disabled={loading || !isValid}
+            className={`px-4 py-2 rounded ${loading || !isValid ? "bg-indigo-200 text-white cursor-not-allowed" : "bg-indigo-600 text-white"}`}
+          >
             {loading ? "Processando..." : "🔍 Criar Script →"}
           </button>
         </div>

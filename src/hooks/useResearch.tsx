@@ -18,8 +18,6 @@ A vitamina D é essencial para:
 
 🧠 Anti-inflamatória - Reduz vermelhidão, acne e dermatites
 
-Segundo estudo da Sociedade Brasileira de Dermatologia, níveis adequados de vitamina D podem reduzir em até 40% os sinais de envelhecimento.
-
 [FECHAMENTO - 1:00-1:20]
 Quer saber se você tem deficiência de vitamina D? Comente aqui embaixo! E se você é consultora, aproveite para compartilhar produtos com vitamina D que podem ajudar suas clientes! 💖
 `.trim();
@@ -139,6 +137,10 @@ export function useResearch() {
     }
   }, [videoId, script, sources]);
 
+  // Provide aliases and helpers for compatibility & normalization
+  const generateScript = createScript;
+  const loading = status === "searching" || status === "generating";
+
   return {
     step,
     setStep,
@@ -153,6 +155,8 @@ export function useResearch() {
     status,
     error,
     createScript,
+    generateScript, // alias
+    loading, // helper boolean
     regenerateScript,
     approveScript,
   };

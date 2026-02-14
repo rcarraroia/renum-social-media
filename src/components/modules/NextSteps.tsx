@@ -12,13 +12,14 @@ type Props = {
 const NextSteps: React.FC<Props> = ({ videoId, script, userPlan }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showFullScript, setShowFullScript] = React.useState(false);
 
   const copyScript = async () => {
     try {
       await navigator.clipboard.writeText(script);
       showSuccess("✅ Script copiado para a área de transferência!");
     } catch {
-      // ignore
+      // fallback not implemented — keep simple
     }
   };
 
@@ -34,16 +35,13 @@ const NextSteps: React.FC<Props> = ({ videoId, script, userPlan }) => {
 
   const goToAvatarAI = () => {
     if (userPlan !== "pro") {
-      // redirect to settings plan
       navigate("/settings?tab=plan");
       return;
     }
 
-    // If we have a videoId, pass it as query param so Module3 can load the script.
     if (videoId) {
       navigate(`/module-3/avatar-ai?video_id=${encodeURIComponent(videoId)}`);
     } else {
-      // if no videoId, we still can navigate and Module3 will start blank
       navigate(`/module-3/avatar-ai`);
     }
   };
@@ -53,9 +51,19 @@ const NextSteps: React.FC<Props> = ({ videoId, script, userPlan }) => {
     navigate("/dashboard");
   };
 
+  const preview = (() => {
+    if (!script) return "";
+    const lines = script.split("\n").filter(Boolean);
+    if (lines.length <= 3) return script;
+    return lines.slice(0, 3).join("\n") + "\n...";
+  })();
+
   return (
     <div className="mt-6 bg-white rounded-lg shadow p-4">
-      <div className="text-lg font-semibold mb-3">Próximos passos — escolha uma jornada</div>
+      <div className="mb-6 text-center">
+        <h2 className="text-2xl font-bold text-green-600">🎉 Script Gerado com Sucesso!</h2>
+        <p className="text-gray-600 mt-2">Escolha como você quer criar seu vídeo:</p>
+      </div>
 
       <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
         <div className="p-3 border rounded flex flex-col">
@@ -97,9 +105,16 @@ const NextSteps: React.FC<Props> = ({ videoId, script, userPlan }) => {
         </div>
       </div>
 
-      <div className="mt-4">
-        <div className="text-sm text-slate-600 mb-2">Prévia do Script</div>
-        <div className="p-3 bg-slate-50 rounded text-sm whitespace-pre-wrap max-h-48 overflow-auto">{script}</div>
+      <div className="mt-6 border rounded-lg p-4 bg-gray-50">
+        <h3 className="font-semibold mb-2">📝 Prévia do Script</h3>
+        <p className="whitespace-pre-wrap text-sm">{showFullScript ? script : preview}</p>
+        {script && (
+          <div className="mt-3">
+            <button onClick={() => setShowFullScript((s) => !s)} className="text-sm text-indigo-600">
+              {showFullScript ? "Ocultar ▲" : "Ver completo ▼"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
