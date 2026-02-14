@@ -15,13 +15,17 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   return (
     <AIAssistantProvider>
       <div className="min-h-screen bg-slate-50">
+        {/* Fixed Navbar */}
         <Navbar />
 
+        {/* Mobile hamburger button */}
         <HamburgerButton />
 
+        {/* Sidebar - fixed on mobile, static on desktop */}
         <Sidebar />
 
-        <div className="md:pl-64">
+        {/* Main content area - offset by sidebar on desktop, offset by navbar on all screens */}
+        <div className="pt-16 md:pl-64">
           <main className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
             {children}
           </main>
