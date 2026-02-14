@@ -5,8 +5,8 @@ const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="w-full bg-white shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-40">
+      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between h-16">
         <div className="flex items-center space-x-3">
           <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">R</div>
           <div>

@@ -35,23 +35,6 @@ const UpgradeRequired: React.FC<{ onUpgrade: () => void; onRefresh: () => void; 
   );
 };
 
-const HeyGenSetup: React.FC<{ onConfigure: () => void }> = ({ onConfigure }) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-lg bg-white rounded-lg shadow p-6 text-center">
-        <div className="text-3xl">⚙️ Configurar HeyGen</div>
-        <p className="mt-3 text-slate-600">Para gerar vídeos com avatar, conecte sua conta HeyGen em Configurações.</p>
-        <div className="mt-6">
-          <button onClick={onConfigure} className="px-4 py-2 bg-indigo-600 text-white rounded">Ir para Configurações →</button>
-          <div className="mt-3">
-            <button onClick={() => alert("HeyGenSetupWizard (placeholder)")} className="text-sm text-indigo-600 underline">Como criar meu avatar?</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const Module3Page: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,6 +126,7 @@ const Module3Page: React.FC = () => {
     );
   }
 
+  // If user is not Pro, show upgrade block
   if (blocked_plan) {
     return (
       <MainLayout>
@@ -151,18 +135,27 @@ const Module3Page: React.FC = () => {
     );
   }
 
-  if (blocked_heygen) {
-    return (
-      <MainLayout>
-        <HeyGenSetup onConfigure={handleConfigureHeygen} />
-      </MainLayout>
-    );
-  }
+  // For Pro users: always show the module.
+  // If HeyGen is not configured, show a non-blocking banner at top with link to settings.
+  const heygenMissing = !(heygenConfig?.apiKey && heygenConfig?.avatarId && heygenConfig?.voiceId);
 
-  // Now user has Pro and HeyGen configured; render flow
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-6 p-4">
+        {heygenMissing && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-medium">HeyGen não configurado</div>
+                <div className="text-sm text-slate-600">Para gerar vídeos com HeyGen, conecte sua conta em Settings → Integrações. Você ainda pode explorar o módulo sem as credenciais.</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={handleConfigureHeygen} className="px-3 py-2 rounded bg-indigo-600 text-white">Ir para Settings</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <button onClick={() => navigate(-1)} className="text-sm text-slate-500 underline">← Voltar</button>
@@ -174,7 +167,7 @@ const Module3Page: React.FC = () => {
           </div>
         </div>
 
-        {/* Stepper simplified: show textual step based on state */}
+        {/* Stepper simplified */}
         <div className="flex gap-2 items-center">
           <div className={`px-3 py-1 rounded ${input ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Script</div>
           <div className={`px-3 py-1 rounded ${approval ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Aprovação</div>
@@ -182,7 +175,7 @@ const Module3Page: React.FC = () => {
           <div className={`px-3 py-1 rounded ${ready ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>4. Resultado</div>
         </div>
 
-        {/* Content depending on state */}
+        {/* Content depending on state (same UI as before) */}
         {input && (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold">PASSO 1: Gerar script para avatar</h3>
@@ -208,7 +201,6 @@ const Module3Page: React.FC = () => {
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => navigate("/dashboard")} className="px-3 py-1 rounded bg-gray-100">Cancelar</button>
               <button onClick={async () => {
-                // Simple mock generation of script if no script present
                 if (!theme.trim()) {
                   showError("Tema não pode estar vazio");
                   return;
@@ -248,7 +240,6 @@ const Module3Page: React.FC = () => {
               <div className="text-sm text-slate-500">Dica: remova emojis e links para melhor desempenho.</div>
               <div className="flex gap-2">
                 <button onClick={() => {
-                  // regenerate mock
                   const toastId = showLoading("Regenerating...");
                   setTimeout(() => {
                     dismissToast(toastId);
@@ -266,7 +257,6 @@ const Module3Page: React.FC = () => {
                       showError("Sem créditos HeyGen. Recarregue sua conta no HeyGen.");
                       return;
                     }
-                    // move to generation
                     handleGenerate();
                   }}
                   disabled={(credits.total ?? 0) > 0 && Math.max(0, (credits.total ?? 0) - (credits.used ?? 0)) <= 0}
@@ -325,7 +315,7 @@ const Module3Page: React.FC = () => {
             <p className="text-sm text-slate-600 mt-2">{error ?? "Falha na geração do vídeo"}</p>
             <div className="mt-4 flex gap-2">
               <button onClick={() => handleGenerate()} className="px-3 py-2 rounded bg-indigo-600 text-white">Tentar Novamente</button>
-              <button onClick={() => setStateToApproval(setScript)} className="px-3 py-2 rounded bg-gray-100">Editar Script</button>
+              <button onClick={() => alert("Volte para o passo de aprovação para editar o script.")} className="px-3 py-2 rounded bg-gray-100">Editar Script</button>
               <button onClick={() => reset()} className="px-3 py-2 rounded bg-white border">Voltar ao Início</button>
             </div>
           </div>
@@ -334,14 +324,5 @@ const Module3Page: React.FC = () => {
     </MainLayout>
   );
 };
-
-// helper to set approval state from failed flow (keeps types simple inside file)
-function setStateToApproval(setScript: (s: string) => void) {
-  // no-op here; the hook exposes reset/approval actions; this placeholder keeps UI straightforward
-  // In a more integrated implementation we'd call a hook action to set state to approval
-  // For now, just an alert to instruct user
-  // eslint-disable-next-line no-alert
-  alert("Volte para o passo de aprovação para editar o script.");
-}
 
 export default Module3Page;
