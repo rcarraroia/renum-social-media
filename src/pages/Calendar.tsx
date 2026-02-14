@@ -7,7 +7,6 @@ import PlatformBadge from "../components/calendar/PlatformBadge";
 import { format } from "date-fns";
 import { getAvailableVideos, createScheduledPost, deleteScheduledPost, updateScheduledPost } from "../services/posts";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
-import AIAssistantFAB from "@/components/ui/AIAssistantFAB";
 
 const ALL_PLATFORMS = ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"];
 
@@ -366,8 +365,6 @@ const CalendarPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      <AIAssistantFAB />
     </MainLayout>
   );
 };

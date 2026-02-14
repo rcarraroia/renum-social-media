@@ -5,7 +5,6 @@ import { StatCard, ModuleCard, ActivityList } from "@/components/dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { showError } from "@/utils/toast";
-import AIAssistantFAB from "@/components/ui/AIAssistantFAB";
 
 type RemoteStats = {
   videosCreated: number;
@@ -174,9 +173,6 @@ const Dashboard: React.FC = () => {
           <ActivityList activities={activities} />
         </div>
       </div>
-
-      {/* AI Assistant FAB */}
-      <AIAssistantFAB />
     </MainLayout>
   );
 };
