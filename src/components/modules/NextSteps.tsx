@@ -1,120 +1,74 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { showSuccess } from "@/utils/toast";
-import { useAuth } from "@/hooks/useAuth";
 
 type Props = {
-  videoId?: string | null;
   script: string;
+  estimatedDuration?: number;
   userPlan: "free" | "starter" | "pro";
+  heygenConfigured: boolean;
+  onSelectTeleprompter: () => void;
+  onSelectAvatar: () => void;
+  onSaveDraft: () => void;
 };
 
-const NextSteps: React.FC<Props> = ({ videoId, script, userPlan }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [showFullScript, setShowFullScript] = React.useState(false);
-
-  const copyScript = async () => {
-    try {
-      await navigator.clipboard.writeText(script);
-      showSuccess("✅ Script copiado para a área de transferência!");
-    } catch {
-      // fallback not implemented — keep simple
-    }
-  };
-
-  const goToUpload = () => {
-    navigate("/module-2/post-rapido", {
-      state: {
-        suggestedDescription: (script ?? "").slice(0, 300),
-        fromModule1: true,
-        videoId: videoId ?? null,
-      },
-    });
-  };
-
-  const goToAvatarAI = () => {
-    if (userPlan !== "pro") {
-      navigate("/settings?tab=plan");
-      return;
-    }
-
-    if (videoId) {
-      navigate(`/module-3/avatar-ai?video_id=${encodeURIComponent(videoId)}`);
-    } else {
-      navigate(`/module-3/avatar-ai`);
-    }
-  };
-
-  const saveAndDashboard = () => {
-    showSuccess("💾 Script salvo nos seus rascunhos");
-    navigate("/dashboard");
-  };
-
-  const preview = (() => {
-    if (!script) return "";
-    const lines = script.split("\n").filter(Boolean);
-    if (lines.length <= 3) return script;
-    return lines.slice(0, 3).join("\n") + "\n...";
-  })();
-
+const Card: React.FC<{ title: string; subtitle: string; badge?: React.ReactNode; recommended?: boolean; onClick: () => void }> = ({ title, subtitle, badge, recommended, onClick }) => {
   return (
-    <div className="mt-6 bg-white rounded-lg shadow p-4">
-      <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-green-600">🎉 Script Gerado com Sucesso!</h2>
-        <p className="text-gray-600 mt-2">Escolha como você quer criar seu vídeo:</p>
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-lg shadow p-4 cursor-pointer transition hover:shadow-md ${recommended ? "border-2 border-indigo-200" : ""}`}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-lg font-bold">{title}</div>
+          <div className="text-sm text-slate-500 mt-1">{subtitle}</div>
+        </div>
+        <div className="text-sm">{badge}</div>
+      </div>
+    </div>
+  );
+};
+
+const NextSteps: React.FC<Props> = ({ script, estimatedDuration, userPlan, heygenConfigured, onSelectTeleprompter, onSelectAvatar, onSaveDraft }) => {
+  return (
+    <div className="space-y-4">
+      <div className="mb-4 text-center">
+        <h2 className="text-2xl font-bold text-green-600">🎯 Escolha a Jornada</h2>
+        <p className="text-sm text-slate-500 mt-2">O que você quer fazer com este script aprovado?</p>
       </div>
 
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-        <div className="p-3 border rounded flex flex-col">
-          <div className="font-medium">📹 Gravar Você Mesmo</div>
-          <div className="text-sm text-slate-500 mt-2 flex-1">
-            Copie o script e grave com seu celular. Depois envie pelo PostRápido.
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button onClick={copyScript} className="px-3 py-1 rounded bg-gray-100">📋 Copiar Script</button>
-            <button onClick={goToUpload} className="px-3 py-1 rounded bg-indigo-600 text-white">📹 Ir para Upload →</button>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card
+          title="🎥 Gravar Você Mesmo"
+          subtitle="Use o teleprompter integrado para gravar com sua câmera. O script rola na tela enquanto você grava."
+          badge={<div className="text-xs px-2 py-0.5 rounded bg-indigo-100">Todos os planos</div>}
+          recommended
+          onClick={onSelectTeleprompter}
+        />
 
-        <div className="p-3 border rounded flex flex-col">
-          <div className="font-medium">🤖 Gerar com Avatar AI</div>
-          <div className="text-sm text-slate-500 mt-2 flex-1">
-            Gere um vídeo automaticamente com avatar falante (recurso PRO).
-          </div>
-          <div className="mt-3">
-            {userPlan === "pro" ? (
-              <button onClick={goToAvatarAI} className="px-3 py-1 rounded bg-indigo-600 text-white">🎬 Gerar com Avatar AI →</button>
+        <Card
+          title="🤖 Gerar com Avatar AI"
+          subtitle="Seu avatar digital grava o vídeo automaticamente usando o script aprovado."
+          badge={
+            userPlan === "pro" ? (
+              <div className="text-xs px-2 py-0.5 rounded bg-green-100">Plano Pro</div>
             ) : (
-              <div className="flex gap-2 items-center">
-                <div className="text-xs px-2 py-0.5 rounded bg-yellow-100">Plano Pro</div>
-                <button onClick={() => navigate("/settings?tab=plan")} className="px-3 py-1 rounded bg-gray-100">Fazer Upgrade →</button>
-              </div>
-            )}
-          </div>
-        </div>
+              <div className="text-xs px-2 py-0.5 rounded bg-slate-100">Pro — faça upgrade</div>
+            )
+          }
+          onClick={onSelectAvatar}
+        />
 
-        <div className="p-3 border rounded flex flex-col">
-          <div className="font-medium">💾 Salvar para Depois</div>
-          <div className="text-sm text-slate-500 mt-2 flex-1">
-            Salve o script em rascunhos e retome quando quiser.
-          </div>
-          <div className="mt-3">
-            <button onClick={saveAndDashboard} className="px-3 py-1 rounded bg-gray-100">← Voltar ao Dashboard</button>
-          </div>
-        </div>
+        <Card
+          title="🔖 Salvar para Depois"
+          subtitle="Salve o script como rascunho e volte quando quiser."
+          badge={<div className="text-xs px-2 py-0.5 rounded bg-indigo-100">Todos os planos</div>}
+          onClick={onSaveDraft}
+        />
       </div>
 
-      <div className="mt-6 border rounded-lg p-4 bg-gray-50">
-        <h3 className="font-semibold mb-2">📝 Prévia do Script</h3>
-        <p className="whitespace-pre-wrap text-sm">{showFullScript ? script : preview}</p>
-        {script && (
-          <div className="mt-3">
-            <button onClick={() => setShowFullScript((s) => !s)} className="text-sm text-indigo-600">
-              {showFullScript ? "Ocultar ▲" : "Ver completo ▼"}
-            </button>
-          </div>
-        )}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="text-sm text-slate-600">Resumo do script</div>
+        <div className="mt-2 text-sm text-slate-700 whitespace-pre-wrap max-h-36 overflow-auto">{script}</div>
+        <div className="mt-3 text-xs text-slate-500">Duração estimada: {Math.floor((estimatedDuration ?? 0) / 60)}:{((estimatedDuration ?? 0) % 60).toString().padStart(2, "0")}</div>
       </div>
     </div>
   );

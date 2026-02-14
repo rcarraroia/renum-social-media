@@ -2,26 +2,24 @@ import React from "react";
 
 type Props = {
   script: string;
+  audience?: string;
   onRegenerate: (feedback?: string) => void;
   onApprove: () => void;
   onEditScript: (s: string) => void;
   loading?: boolean;
 };
 
-const countWords = (text: string) => {
+function countWords(text: string) {
   if (!text) return 0;
   return text.trim().split(/\s+/).length;
-};
+}
 
-const estimateDuration = (text: string) => {
+function estimateSeconds(text: string) {
   const words = countWords(text);
-  const totalSeconds = Math.round(words * 0.5); // 0.5 seconds per word (spec)
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-};
+  return Math.round(words * 0.5); // 0.5s per word
+}
 
-const ScriptPreview: React.FC<Props> = ({ script, onRegenerate, onApprove, onEditScript, loading }) => {
+const ScriptPreview: React.FC<Props> = ({ script, audience, onRegenerate, onApprove, onEditScript, loading }) => {
   const [editing, setEditing] = React.useState(false);
   const [localScript, setLocalScript] = React.useState(script ?? "");
 
@@ -29,32 +27,54 @@ const ScriptPreview: React.FC<Props> = ({ script, onRegenerate, onApprove, onEdi
     setLocalScript(script ?? "");
   }, [script]);
 
-  const wordCount = countWords(localScript);
-  const duration = estimateDuration(localScript);
+  const words = countWords(localScript);
+  const seconds = estimateSeconds(localScript);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(localScript);
+      // minimal feedback (could use toast)
+      // eslint-disable-next-line no-alert
+      alert("Script copiado!");
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-semibold">PASSO 2: Preview do Script</h3>
-            <p className="text-sm text-slate-500">Revise, edite ou regenere o script antes de aprovar.</p>
+            <h3 className="text-lg font-semibold">PASSO 2: Revisar o Script</h3>
+            <p className="text-sm text-slate-500">Revise ou edite antes de escolher sua jornada.</p>
           </div>
-          <div className="text-sm text-slate-400">Palavras: {wordCount} • Duração: {duration}</div>
+
+          <div className="text-sm text-slate-400">
+            <div>Palavras: {words}</div>
+            <div>Duração: {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, "0")}</div>
+            <div>Público: {audience ?? "—"}</div>
+          </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 relative">
+          <div className="absolute right-3 top-3">
+            <button title="Copiar" onClick={handleCopy} className="text-sm text-slate-600 bg-slate-100 p-1 rounded">
+              📋
+            </button>
+          </div>
+
           {!editing ? (
-            <div className="prose max-w-none whitespace-pre-wrap text-slate-800">{localScript || "Nenhum script gerado ainda."}</div>
+            <div className="whitespace-pre-wrap text-slate-800 min-h-[200px]">{localScript || "Nenhum script gerado ainda."}</div>
           ) : (
-            <textarea value={localScript} onChange={(e) => setLocalScript(e.target.value)} rows={12} className="w-full rounded border p-2" />
+            <textarea value={localScript} onChange={(e) => setLocalScript(e.target.value)} rows={8} className="w-full rounded border p-2 min-h-[200px]" />
           )}
         </div>
 
         <div className="mt-4 flex justify-between items-center">
           <div className="space-x-2">
             {!editing ? (
-              <button onClick={() => setEditing(true)} className="px-3 py-1 rounded bg-gray-100">✏️ Editar Script</button>
+              <button onClick={() => setEditing(true)} className="px-3 py-1 rounded bg-gray-100">✏️ Editar</button>
             ) : (
               <>
                 <button onClick={() => { setEditing(false); setLocalScript(script ?? ""); }} className="px-3 py-1 rounded bg-gray-100">Cancelar</button>
@@ -62,21 +82,13 @@ const ScriptPreview: React.FC<Props> = ({ script, onRegenerate, onApprove, onEdi
               </>
             )}
 
-            <button onClick={() => onRegenerate()} disabled={loading} className="px-3 py-1 rounded bg-gray-100">🔄 Regerar</button>
+            <button onClick={() => onRegenerate()} disabled={!!loading} className="px-3 py-1 rounded bg-gray-100">🔄 Regerar</button>
           </div>
 
           <div>
-            <button onClick={() => { onApprove(); }} className="px-4 py-2 rounded bg-green-600 text-white">✅ Aprovar e Continuar</button>
+            <button onClick={() => onApprove()} className="px-4 py-2 rounded bg-green-600 text-white">✅ Aprovar Script</button>
           </div>
         </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="text-sm text-slate-600 mb-2">Fontes utilizadas</div>
-        <ul className="text-sm text-slate-700 list-disc pl-5">
-          <li>Sociedade Brasileira de Dermatologia (exemplo)</li>
-          <li>PubMed - Vitamin D and Skin Health (exemplo)</li>
-        </ul>
       </div>
     </div>
   );

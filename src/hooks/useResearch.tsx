@@ -5,6 +5,15 @@ import { showLoading, dismissToast, showSuccess, showError } from "../utils/toas
 
 type Status = "idle" | "searching" | "generating" | "ready" | "error";
 
+type Draft = {
+  id: string;
+  theme: string;
+  audience: string;
+  script: string;
+  created_at: string;
+  estimated_seconds?: number;
+};
+
 const MOCK_SCRIPT = `
 [ABERTURA - 0:00-0:10]
 Você sabia que 80% das brasileiras têm deficiência de vitamina D? 🌞 Isso afeta diretamente a saúde da sua pele!
@@ -35,6 +44,10 @@ const MOCK_SOURCES = [
   },
 ];
 
+function draftStorageKey(userId?: string) {
+  return `renum_script_drafts_${userId ?? "anon"}`;
+}
+
 export function useResearch() {
   const user = useAuthStore((s) => s.user);
   const orgId = user?.organization_id ?? "";
@@ -48,6 +61,15 @@ export function useResearch() {
   const [sources, setSources] = React.useState<any[]>([]);
   const [status, setStatus] = React.useState<Status>("idle");
   const [error, setError] = React.useState<string | null>(null);
+
+  const [drafts, setDrafts] = React.useState<Draft[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = React.useState<boolean>(false);
+  const [savingDraft, setSavingDraft] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    loadDrafts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const validateThemeInput = React.useCallback((t: string, a: string) => {
     const errors: string[] = [];
@@ -72,36 +94,29 @@ export function useResearch() {
     setStatus("searching");
     try {
       const toastId = showLoading("Criando rascunho e pesquisando...");
-      const { data, error: cErr } = await createResearchVideo(orgId, userId, theme, audience);
+      // Call real backend in future
+      // const { data, error: cErr } = await createResearchVideo(orgId, userId, theme, audience);
       dismissToast(toastId);
-      if (cErr || !data) {
-        throw cErr ?? new Error("Falha ao criar o rascunho");
-      }
-      setVideoId(data.id);
+
+      // Mock generation
+      setTimeout(() => {
+        setScript(MOCK_SCRIPT);
+        setSources(MOCK_SOURCES);
+        setStatus("ready");
+        setStep(2);
+        showSuccess("Script gerado com sucesso (mock)");
+      }, 1000);
     } catch (err: any) {
       setStatus("error");
       setError(err?.message ?? "Erro ao iniciar pesquisa");
       showError(err?.message ?? "Erro ao iniciar pesquisa");
       return;
     }
-
-    // MOCK: simulate search -> generate
-    setTimeout(() => {
-      setStatus("generating");
-    }, 1200);
-
-    setTimeout(() => {
-      setScript(MOCK_SCRIPT);
-      setSources(MOCK_SOURCES);
-      setStatus("ready");
-      setStep(2);
-      showSuccess("Script gerado com sucesso (mock)");
-    }, 3500);
   }, [theme, audience, orgId, userId, validateThemeInput]);
 
   const regenerateScript = React.useCallback(async (feedback?: string) => {
-    if (!videoId) {
-      showError("Vídeo não encontrado para regenerar");
+    if (!videoId && !theme) {
+      showError("Tema ou rascunho necessário para regenerar");
       return;
     }
     setStatus("generating");
@@ -109,42 +124,93 @@ export function useResearch() {
     // MOCK
     setTimeout(() => {
       dismissToast(toastId);
-      setScript((s) => s + "\n\n(versão regenerada)"); // small variation
+      setScript((s) => (s ? s + "\n\n(versão regenerada)" : MOCK_SCRIPT));
       setStatus("ready");
       showSuccess("✅ Novo script gerado (mock)");
-    }, 2000);
-  }, [videoId]);
+    }, 1500);
+  }, [videoId, theme]);
 
   const approveScript = React.useCallback(async () => {
-    if (!videoId) {
-      showError("Vídeo não encontrado para salvar");
+    if (!script || script.trim().length === 0) {
+      showError("Script vazio — não é possível aprovar");
       return;
     }
-    setStatus("generating");
-    try {
-      const toastId = showLoading("Salvando script...");
-      const { data, error: saveErr } = await saveGeneratedScript(videoId, script, sources);
-      dismissToast(toastId);
-      if (saveErr) {
-        throw saveErr;
-      }
-      setStatus("ready");
-      setStep(3);
-      showSuccess("✅ Script salvo e rascunho criado");
-    } catch (err: any) {
-      setStatus("error");
-      showError(err?.message ?? "Erro ao salvar script");
-    }
-  }, [videoId, script, sources]);
+    // Move to journey selection step
+    setStep(3);
+  }, [script]);
 
-  // Provide aliases and helpers for compatibility & normalization
+  // Draft helpers (localStorage-backed mock)
+  const loadDrafts = React.useCallback(() => {
+    setLoadingDrafts(true);
+    try {
+      const raw = localStorage.getItem(draftStorageKey(userId));
+      const arr: Draft[] = raw ? JSON.parse(raw) : [];
+      setDrafts(arr);
+    } catch (e) {
+      setDrafts([]);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  }, [userId]);
+
+  const saveDraft = React.useCallback(async (payload: { theme: string; audience: string; script: string; estimated_seconds?: number }) => {
+    setSavingDraft(true);
+    try {
+      const id = `draft_${Date.now()}`;
+      const d: Draft = {
+        id,
+        theme: payload.theme,
+        audience: payload.audience,
+        script: payload.script,
+        created_at: new Date().toISOString(),
+        estimated_seconds: payload.estimated_seconds ?? Math.round((payload.script?.split(/\s+/).length ?? 0) * 0.5),
+      };
+      const raw = localStorage.getItem(draftStorageKey(userId));
+      const arr: Draft[] = raw ? JSON.parse(raw) : [];
+      arr.unshift(d);
+      localStorage.setItem(draftStorageKey(userId), JSON.stringify(arr));
+      setDrafts(arr);
+      showSuccess("Script salvo como rascunho!");
+      return d;
+    } catch (e) {
+      showError("Erro ao salvar rascunho");
+      return null;
+    } finally {
+      setSavingDraft(false);
+    }
+  }, [userId]);
+
+  const deleteDraft = React.useCallback((id: string) => {
+    const raw = localStorage.getItem(draftStorageKey(userId));
+    const arr: Draft[] = raw ? JSON.parse(raw) : [];
+    const next = arr.filter((d) => d.id !== id);
+    localStorage.setItem(draftStorageKey(userId), JSON.stringify(next));
+    setDrafts(next);
+    showSuccess("Rascunho removido");
+  }, [userId]);
+
+  const loadDraftIntoEditor = React.useCallback((id: string) => {
+    const raw = localStorage.getItem(draftStorageKey(userId));
+    const arr: Draft[] = raw ? JSON.parse(raw) : [];
+    const d = arr.find((x) => x.id === id);
+    if (!d) {
+      showError("Rascunho não encontrado");
+      return;
+    }
+    setTheme(d.theme);
+    setAudience(d.audience);
+    setScript(d.script);
+    setStep(3); // move to journey selection directly (as if approved)
+  }, [userId]);
+
   const generateScript = createScript;
   const loading = status === "searching" || status === "generating";
+  const saving_draft = savingDraft;
 
   return {
+    // state
     step,
     setStep,
-    videoId,
     theme,
     setTheme,
     audience,
@@ -154,10 +220,22 @@ export function useResearch() {
     sources,
     status,
     error,
+
+    // actions
     createScript,
-    generateScript, // alias
-    loading, // helper boolean
+    generateScript,
     regenerateScript,
     approveScript,
+
+    // drafts
+    drafts,
+    loadingDrafts,
+    saveDraft,
+    deleteDraft,
+    loadDraftIntoEditor,
+    saving_draft,
+
+    // helpers
+    loading,
   };
 }
