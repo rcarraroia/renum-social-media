@@ -72,6 +72,33 @@ const Module3Page: React.FC = () => {
   } = useAvatar();
 
   const [localLoading, setLocalLoading] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  const [testStep, setTestStep] = useState(1);
+
+  // For testing: override the hook's state with local test state
+  const effectiveInput = testMode ? testStep === 1 : input;
+  const effectiveApproval = testMode ? testStep === 2 : approval;
+  const effectiveGenerating = testMode ? testStep === 3 : generating;
+  const effectiveReady = testMode ? testStep === 4 : ready;
+
+  // For testing: load sample script
+  const loadSampleForTesting = () => {
+    setTheme("Benefícios da vitamina D para a pele");
+    setAudience("mlm");
+    setScript("Você sabia que a vitamina D é essencial para a saúde da sua pele? Além de fortalecer os ossos, ela ajuda a combater inflamações, reduzir acne e até prevenir o envelhecimento precoce. A exposição solar moderada é a melhor fonte, mas suplementos também podem ajudar. Cuide da sua pele de dentro para fora!");
+  };
+
+  const enableTestMode = (step: number) => {
+    setTestMode(true);
+    setTestStep(step);
+    if (step >= 2) {
+      loadSampleForTesting();
+    }
+    if (step === 4) {
+      // Add test video URL for step 4
+      (videoUrl as any) = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    }
+  };
 
   useEffect(() => {
     // If the route passed script via state, load it into hook
@@ -163,20 +190,26 @@ const Module3Page: React.FC = () => {
             <p className="text-sm text-slate-500">Use suas credenciais HeyGen para gerar vídeos com seu avatar digital.</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex gap-1">
+              <button onClick={() => enableTestMode(1)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 1">1</button>
+              <button onClick={() => enableTestMode(2)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 2">2</button>
+              <button onClick={() => enableTestMode(3)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 3">3</button>
+              <button onClick={() => enableTestMode(4)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 4">4</button>
+            </div>
             <CreditsBadge used={credits.used ?? 0} total={credits.total ?? 0} onClick={() => alert(`Créditos: ${(credits.total ?? 0) - (credits.used ?? 0)}/${credits.total ?? 0}`)} />
           </div>
         </div>
 
         {/* Stepper simplified */}
         <div className="flex gap-2 items-center">
-          <div className={`px-3 py-1 rounded ${input ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Script</div>
-          <div className={`px-3 py-1 rounded ${approval ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Aprovação</div>
-          <div className={`px-3 py-1 rounded ${generating ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Geração</div>
-          <div className={`px-3 py-1 rounded ${ready ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>4. Resultado</div>
+          <button onClick={() => enableTestMode(1)} className={`px-3 py-1 rounded ${effectiveInput ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>1. Script</button>
+          <button onClick={() => enableTestMode(2)} className={`px-3 py-1 rounded ${effectiveApproval ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>2. Aprovação</button>
+          <button onClick={() => enableTestMode(3)} className={`px-3 py-1 rounded ${effectiveGenerating ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>3. Geração</button>
+          <button onClick={() => enableTestMode(4)} className={`px-3 py-1 rounded ${effectiveReady ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>4. Resultado</button>
         </div>
 
         {/* Content depending on state (same UI as before) */}
-        {input && (
+        {effectiveInput && (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold">PASSO 1: Gerar script para avatar</h3>
             <p className="text-sm text-slate-500">Insira um tema ou traga um script do ScriptAI.</p>
@@ -217,7 +250,7 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {approval && (
+        {effectiveApproval && (
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-start justify-between">
               <div>
@@ -269,7 +302,7 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {generating && (
+        {effectiveGenerating && (
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <h3 className="text-lg font-semibold">PASSO 3: Gerando seu vídeo...</h3>
             <p className="text-sm text-slate-500 mt-1">Geralmente leva 1-3 minutos. Você será notificado quando pronto.</p>
@@ -287,7 +320,7 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {ready && videoUrl && (
+        {effectiveReady && videoUrl && (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold">PASSO 4: Resultado</h3>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -23,6 +23,26 @@ const Module2Page: React.FC = () => {
 
   const [step, setStep] = React.useState<number>(1);
 
+  // For testing: load sample video data
+  const loadSampleVideo = () => {
+    // Mock video data for testing
+    const mockVideoData = {
+      id: "test-video-123",
+      video_raw_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      video_processed_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      duration_seconds: 596,
+      descriptions: {
+        instagram: "🎬 Confira este vídeo incrível! #video #content",
+        tiktok: "🔥 Novo vídeo no ar! #viral #trending",
+        facebook: "Assista ao nosso novo vídeo e compartilhe com seus amigos!",
+      },
+    };
+    
+    // Simulate loaded video
+    (videoData as any) = mockVideoData;
+    setStep(2);
+  };
+
   React.useEffect(() => {
     // if there is already a videoId in query/local state we could load it
     // for now, stay simple
@@ -77,14 +97,37 @@ const Module2Page: React.FC = () => {
             <h1 className="text-2xl font-bold mt-2">⚡ PostRápido</h1>
             <p className="text-sm text-slate-500 mt-1">Upload, legendas e agendamento</p>
           </div>
-          <div className="text-sm text-slate-500">Passo {step} de 3</div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={loadSampleVideo}
+              className="text-xs px-3 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+            >
+              🧪 Carregar Vídeo de Teste
+            </button>
+            <div className="text-sm text-slate-500">Passo {step} de 3</div>
+          </div>
         </div>
 
         {/* Stepper */}
         <div className="flex gap-2 items-center overflow-x-auto pb-2">
-          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Upload</div>
-          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Preview</div>
-          <div className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Edição</div>
+          <button 
+            onClick={() => setStep(1)}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+          >
+            1. Upload
+          </button>
+          <button 
+            onClick={() => setStep(2)}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+          >
+            2. Preview
+          </button>
+          <button 
+            onClick={() => setStep(3)}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+          >
+            3. Edição
+          </button>
         </div>
 
         {/* Content */}

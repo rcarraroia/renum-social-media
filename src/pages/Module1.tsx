@@ -36,6 +36,14 @@ const Module1Page: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<"new" | "drafts">("new");
   const [teleprompterActive, setTeleprompterActive] = React.useState(false);
 
+  // For testing: add a sample script button
+  const loadSampleScript = () => {
+    setTheme("Benefícios da vitamina D para a pele");
+    setAudience("general");
+    setScript("Você sabia que a vitamina D é essencial para a saúde da sua pele? Além de fortalecer os ossos, ela ajuda a combater inflamações, reduzir acne e até prevenir o envelhecimento precoce. A exposição solar moderada é a melhor fonte, mas suplementos também podem ajudar. Cuide da sua pele de dentro para fora!");
+    setStep(2);
+  };
+
   // HeyGen config detection (mocked via user.organization)
   const heygenConfigured = Boolean(user?.organization?.heygen_api_key);
 
@@ -96,7 +104,15 @@ const Module1Page: React.FC = () => {
             <h1 className="text-2xl font-bold">📝 ScriptAI</h1>
             <p className="text-sm text-slate-500">Pesquise temas e gere scripts com IA</p>
           </div>
-          <div className="text-sm text-slate-400">Passo {Math.min(step, 4)} de 4</div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={loadSampleScript}
+              className="text-xs px-3 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+            >
+              🧪 Carregar Script de Teste
+            </button>
+            <div className="text-sm text-slate-400">Passo {Math.min(step, 4)} de 4</div>
+          </div>
         </div>
 
         {/* Tabs: Generate New | My Drafts */}
@@ -187,13 +203,23 @@ const Module1Page: React.FC = () => {
 
         {/* Footer actions */}
         <div className="flex justify-between items-center">
-          <div />
-          <div>
-            <button onClick={() => { if (step > 1) setStep(step - 1); }} className="px-4 py-2 rounded bg-gray-100 mr-2">← Voltar</button>
-            {step === 1 && (
-              <button onClick={() => createScript()} className="px-4 py-2 rounded bg-indigo-600 text-white">Gerar Script →</button>
-            )}
-          </div>
+          <button 
+            onClick={() => { if (step > 1) setStep(step - 1); }} 
+            disabled={step === 1}
+            className={`px-4 py-2 rounded min-h-[44px] ${step === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100"}`}
+          >
+            ← Voltar
+          </button>
+          
+          {/* Navigation for testing/preview - allow moving forward to see all steps */}
+          {activeTab === "new" && step < 4 && step !== 1 && (
+            <button 
+              onClick={() => setStep(step + 1)} 
+              className="px-4 py-2 rounded bg-indigo-600 text-white min-h-[44px]"
+            >
+              Próximo Passo →
+            </button>
+          )}
         </div>
       </div>
     </MainLayout>

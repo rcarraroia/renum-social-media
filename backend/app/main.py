@@ -15,19 +15,15 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
 )
 
-# Parse CORS origins from comma-separated string (pydantic may provide list)
-origins = []
-if isinstance(settings.cors_origins, str):
-    origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
-elif isinstance(settings.cors_origins, list):
-    origins = settings.cors_origins
+# Parse CORS origins
+origins = settings.allowed_origins if isinstance(settings.allowed_origins, list) else []
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins or ["*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 @app.exception_handler(Exception)
