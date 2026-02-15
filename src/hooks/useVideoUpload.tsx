@@ -2,6 +2,7 @@ import * as React from "react";
 import { createVideoRecord, uploadVideoToStorage, updateVideoStatus, updateVideoDescriptions, getVideoById } from "../services/videos";
 import { useAuthStore } from "../stores/authStore";
 import { showSuccess, showError, showLoading, dismissToast } from "../utils/toast";
+import { api } from "@/lib/api";
 
 type Status = "idle" | "uploading" | "processing" | "ready" | "error";
 
@@ -28,84 +29,62 @@ export function useVideoUpload() {
       setUploadProgress(2);
 
       try {
-        const { data: videoRecord, error: createErr } = await createVideoRecord(orgId, userId);
-        if (createErr || !videoRecord) {
-          throw createErr ?? new Error("Falha ao criar registro do vídeo");
-        }
-        // videoRecord is any => safe to access .id
-        setVideoId(videoRecord.id);
-
-        // Upload to storage
+        // 1. Upload do vídeo via API
         const toastId = showLoading("Fazendo upload do vídeo...");
-
-        // Simulate upload progress more deterministically
+        
+        // Simular progresso de upload
         let uploadCurrent = 2;
         const uploadInterval = setInterval(() => {
           uploadCurrent = Math.min(95, uploadCurrent + Math.floor(Math.random() * 12) + 3);
           setUploadProgress(uploadCurrent);
         }, 400);
 
-        const { data: publicUrl, error: uploadErr } = await uploadVideoToStorage(file, orgId, videoRecord.id);
+        const uploadResponse = await api.postrapido.upload(file, file.name);
         clearInterval(uploadInterval);
         setUploadProgress(100);
         dismissToast(toastId);
 
-        if (uploadErr || !publicUrl) {
-          throw uploadErr ?? new Error("Falha no upload para storage");
-        }
+        setVideoId(uploadResponse.videoId);
+        showSuccess("Upload concluído!");
 
-        // Update record with raw url and set status processing
-        await updateVideoStatus(videoRecord.id, { video_raw_url: publicUrl, status: "processing" });
+        // 2. Transcrever vídeo
         setStatus("processing");
-        setUploadProgress(0); // start processing progress
+        setUploadProgress(0);
+        const transcribeToast = showLoading("Transcrevendo vídeo...");
+        
+        const transcriptionResponse = await api.postrapido.transcribe({
+          videoId: uploadResponse.videoId,
+          language: "pt",
+        });
+        
+        dismissToast(transcribeToast);
+        showSuccess("Transcrição concluída!");
 
-        showSuccess("Upload concluído — processando vídeo...");
+        // 3. Gerar descrições para plataformas
+        const descToast = showLoading("Gerando descrições com IA...");
+        
+        const descriptionsResponse = await api.postrapido.generateDescriptions({
+          videoId: uploadResponse.videoId,
+          platforms: ["instagram", "tiktok", "facebook", "linkedin"],
+          tone: "professional",
+          includeHashtags: true,
+        });
+        
+        dismissToast(descToast);
 
-        // Simulate processing progress (deterministic)
-        let proc = 0;
-        const procInterval = setInterval(() => {
-          proc = Math.min(100, proc + Math.floor(Math.random() * 18) + 5);
-          setUploadProgress(proc);
-          if (proc >= 100) {
-            clearInterval(procInterval);
-          }
-        }, 700);
+        // 4. Atualizar estado com dados completos
+        setVideoData({
+          id: uploadResponse.videoId,
+          video_processed_url: uploadResponse.url,
+          video_raw_url: uploadResponse.url,
+          transcription: transcriptionResponse.transcription,
+          descriptions: descriptionsResponse.descriptions,
+          duration_seconds: 60, // Placeholder - seria retornado pela API
+        });
 
-        // MOCK: simulate backend processing (after ~3s -> ready)
-        setTimeout(async () => {
-          // ensure processing progress reaches 100
-          setUploadProgress(100);
-          clearInterval(procInterval);
-
-          const processedUrl = publicUrl;
-          const captions = [
-            { start: 0, end: 2, text: "Legenda 1" },
-            { start: 3, end: 6, text: "Legenda 2" },
-          ];
-          const descriptions = {
-            instagram: "Descrição gerada por IA para Instagram (mock).",
-            tiktok: "Descrição gerada por IA para TikTok (mock).",
-            facebook: "Descrição gerada por IA para Facebook (mock).",
-          };
-
-          await updateVideoStatus(videoRecord.id, {
-            video_processed_url: processedUrl,
-            captions,
-            status: "ready",
-          });
-
-          setVideoData({
-            id: videoRecord.id,
-            video_processed_url: processedUrl,
-            video_raw_url: publicUrl,
-            captions,
-            descriptions,
-          });
-
-          setStatus("ready");
-          setUploadProgress(100);
-          showSuccess("Vídeo processado com sucesso!");
-        }, 3000);
+        setStatus("ready");
+        setUploadProgress(100);
+        showSuccess("Vídeo processado com sucesso!");
       } catch (err: any) {
         console.error("Upload error", err);
         setStatus("error");
@@ -118,15 +97,21 @@ export function useVideoUpload() {
 
   const loadVideoData = React.useCallback(
     async (id: string) => {
-      const { data, error: gErr } = await getVideoById(id);
-      if (gErr || !data) {
-        setError(gErr?.message ?? "Vídeo não encontrado");
-        return;
+      try {
+        // Carregar dados do vídeo via API (se houver endpoint específico)
+        // Por enquanto, mantemos compatibilidade com serviço existente
+        const { data, error: gErr } = await getVideoById(id);
+        if (gErr || !data) {
+          setError(gErr?.message ?? "Vídeo não encontrado");
+          return;
+        }
+        setVideoId(id);
+        setVideoData({ ...(data as any) });
+        setStatus(((data as any).status ?? "idle") as Status);
+      } catch (err: any) {
+        console.error("Erro ao carregar vídeo:", err);
+        setError(err?.message ?? "Erro ao carregar vídeo");
       }
-      setVideoId(id);
-      // data is any, safe to spread into an object
-      setVideoData({ ...(data as any) });
-      setStatus(((data as any).status ?? "idle") as Status);
     },
     [],
   );
@@ -135,18 +120,39 @@ export function useVideoUpload() {
     async (descriptions: Record<string, string>) => {
       if (!videoId) {
         showError("Nenhum vídeo selecionado");
-        return;
+        return { error: new Error("Nenhum vídeo selecionado") };
       }
-      const toastId = showLoading("Salvando descrições...");
-      const { data, error: upError } = await updateVideoDescriptions(videoId, descriptions);
-      dismissToast(toastId);
-      if (upError) {
-        showError("Erro ao salvar descrições");
-        return { error: upError };
+      
+      const toastId = showLoading("Agendando posts...");
+      
+      try {
+        // Agendar posts para cada plataforma
+        const schedules = Object.entries(descriptions).map(([platform, description]) => ({
+          platform: platform as any,
+          description,
+          scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h a partir de agora
+        }));
+
+        const response = await api.postrapido.schedule({
+          videoId,
+          schedules,
+        });
+
+        dismissToast(toastId);
+        
+        if (response.success) {
+          setVideoData((prev: any) => ({ ...(prev ?? {}), descriptions }));
+          showSuccess(`✅ ${response.scheduled_posts.length} posts agendados com sucesso!`);
+          return { data: response };
+        } else {
+          throw new Error("Erro ao agendar posts");
+        }
+      } catch (err: any) {
+        dismissToast(toastId);
+        console.error("Erro ao salvar descrições:", err);
+        showError(err?.message ?? "Erro ao agendar posts");
+        return { error: err };
       }
-      setVideoData((prev: any) => ({ ...(prev ?? {}), descriptions }));
-      showSuccess("✅ Vídeo salvo com sucesso!");
-      return { data };
     },
     [videoId],
   );

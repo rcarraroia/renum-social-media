@@ -336,6 +336,276 @@ class VideoProcessingService:
         except subprocess.CalledProcessError as e:
             logger.error(f"FFmpeg trim failed: {e.stderr}", exc_info=True)
             raise Exception(f"Video trim failed: {e.stderr}")
+    
+    async def extract_metadata(self, video_path: str) -> Dict[str, Any]:
+        """
+        Extract video metadata (wrapper for get_video_info)
+        """
+        info = await self.get_video_info(video_path)
+        return {
+            "duration": info["duration"],
+            "resolution": f"{info['width']}x{info['height']}",
+            "codec": info["video_codec"],
+            "fps": info["fps"],
+            "sizeBytes": info["size"]
+        }
+    
+    async def detect_silences(
+        self,
+        video_url: str,
+        min_silence_duration: float = 1.0,
+        silence_threshold: int = -30
+    ) -> Dict[str, Any]:
+        """
+        Detect silences in video audio using FFmpeg silencedetect filter
+        """
+        import tempfile
+        import urllib.request
+        
+        try:
+            # Download video to temp file
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
+                temp_path = tmp_file.name
+                urllib.request.urlretrieve(video_url, temp_path)
+            
+            # Get video duration
+            info = await self.get_video_info(temp_path)
+            video_duration = info["duration"]
+            
+            # Run FFmpeg with silencedetect filter
+            cmd = [
+                "ffmpeg",
+                "-i", temp_path,
+                "-af", f"silencedetect=noise={silence_threshold}dB:d={min_silence_duration}",
+                "-f", "null",
+                "-"
+            ]
+            
+            result = await asyncio.to_thread(
+                subprocess.run,
+                cmd,
+                capture_output=True,
+                text=True
+            )
+            
+            # Parse silence detection output
+            silences = []
+            lines = result.stderr.split("\n")
+            
+            silence_start = None
+            for line in lines:
+                if "silence_start:" in line:
+                    silence_start = float(line.split("silence_start:")[1].strip())
+                elif "silence_end:" in line and silence_start is not None:
+                    parts = line.split("|")
+                    silence_end = float(parts[0].split("silence_end:")[1].strip())
+                    silence_duration = float(parts[1].split("silence_duration:")[1].strip())
+                    
+                    silences.append({
+                        "start": silence_start,
+                        "end": silence_end,
+                        "duration": silence_duration
+                    })
+                    silence_start = None
+            
+            # Calculate total silence duration
+            total_silence = sum(s["duration"] for s in silences)
+            silence_percentage = (total_silence / video_duration * 100) if video_duration > 0 else 0
+            
+            # Clean up temp file
+            Path(temp_path).unlink(missing_ok=True)
+            
+            return {
+                "silences": silences,
+                "totalSilenceDuration": total_silence,
+                "videoDuration": video_duration,
+                "silencePercentage": round(silence_percentage, 2)
+            }
+            
+        except Exception as e:
+            logger.error(f"Silence detection error: {e}", exc_info=True)
+            raise
+    
+    async def process_video(
+        self,
+        video_url: str,
+        video_id: str,
+        subtitles: Optional[Dict[str, Any]] = None,
+        trim: Optional[Dict[str, Any]] = None,
+        silence_removal: Optional[Dict[str, Any]] = None,
+        progress_callback = None
+    ) -> Dict[str, Any]:
+        """
+        Process video with multiple operations: trim, silence removal, subtitles
+        """
+        import tempfile
+        import urllib.request
+        
+        try:
+            # Download video
+            if progress_callback:
+                progress_callback(10, "Baixando vídeo...")
+            
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
+                temp_input = tmp_file.name
+                urllib.request.urlretrieve(video_url, temp_input)
+            
+            current_file = temp_input
+            
+            # Apply trim
+            if trim:
+                if progress_callback:
+                    progress_callback(25, "Aplicando cortes...")
+                
+                trimmed_file = str(self.temp_path / f"{video_id}_trimmed.mp4")
+                await self.trim_video(
+                    current_file,
+                    trimmed_file,
+                    trim["start"],
+                    trim["end"]
+                )
+                if current_file != temp_input:
+                    Path(current_file).unlink(missing_ok=True)
+                current_file = trimmed_file
+            
+            # Apply silence removal
+            if silence_removal and silence_removal.get("enabled"):
+                if progress_callback:
+                    progress_callback(40, "Removendo silêncios...")
+                
+                # Build complex filter for removing silences
+                silences = silence_removal.get("silences", [])
+                if silences:
+                    removed_file = str(self.temp_path / f"{video_id}_no_silence.mp4")
+                    await self._remove_silences(current_file, removed_file, silences)
+                    if current_file != temp_input:
+                        Path(current_file).unlink(missing_ok=True)
+                    current_file = removed_file
+            
+            # Apply subtitles
+            if subtitles and subtitles.get("enabled"):
+                if progress_callback:
+                    progress_callback(60, "Aplicando legendas...")
+                
+                subtitled_file = str(self.temp_path / f"{video_id}_subtitled.mp4")
+                await self.burn_subtitles(
+                    current_file,
+                    subtitled_file,
+                    subtitles["segments"],
+                    subtitles.get("style")
+                )
+                if current_file != temp_input:
+                    Path(current_file).unlink(missing_ok=True)
+                current_file = subtitled_file
+            
+            # Final output
+            if progress_callback:
+                progress_callback(80, "Finalizando vídeo...")
+            
+            output_file = str(self.temp_path / f"{video_id}_final.mp4")
+            
+            # Convert to MP4 if needed
+            if not current_file.endswith(".mp4"):
+                await self.convert_format(current_file, output_file, "mp4")
+                Path(current_file).unlink(missing_ok=True)
+            else:
+                # Just rename/move
+                Path(current_file).rename(output_file)
+            
+            # Get final video info
+            info = await self.get_video_info(output_file)
+            
+            # Clean up temp input
+            Path(temp_input).unlink(missing_ok=True)
+            
+            return {
+                "output_path": output_file,
+                "duration": info["duration"],
+                "size": info["size"]
+            }
+            
+        except Exception as e:
+            logger.error(f"Video processing error: {e}", exc_info=True)
+            raise
+    
+    async def _remove_silences(
+        self,
+        input_path: str,
+        output_path: str,
+        silences: List[Dict[str, Any]]
+    ) -> str:
+        """
+        Remove silence segments from video
+        """
+        try:
+            # Get video duration
+            info = await self.get_video_info(input_path)
+            duration = info["duration"]
+            
+            # Build segments to keep (inverse of silences)
+            keep_segments = []
+            last_end = 0
+            
+            for silence in sorted(silences, key=lambda x: x["start"]):
+                if silence["start"] > last_end:
+                    keep_segments.append((last_end, silence["start"]))
+                last_end = silence["end"]
+            
+            # Add final segment
+            if last_end < duration:
+                keep_segments.append((last_end, duration))
+            
+            if not keep_segments:
+                # No segments to keep, just copy
+                Path(input_path).rename(output_path)
+                return output_path
+            
+            # Create temp files for each segment
+            segment_files = []
+            for i, (start, end) in enumerate(keep_segments):
+                segment_file = str(self.temp_path / f"segment_{i}.mp4")
+                await self.trim_video(input_path, segment_file, start, end)
+                segment_files.append(segment_file)
+            
+            # Concatenate segments
+            if len(segment_files) == 1:
+                Path(segment_files[0]).rename(output_path)
+            else:
+                # Create concat file
+                concat_file = str(self.temp_path / "concat.txt")
+                with open(concat_file, "w") as f:
+                    for seg_file in segment_files:
+                        f.write(f"file '{seg_file}'\n")
+                
+                # Concatenate
+                cmd = [
+                    "ffmpeg",
+                    "-f", "concat",
+                    "-safe", "0",
+                    "-i", concat_file,
+                    "-c", "copy",
+                    "-y",
+                    output_path
+                ]
+                
+                await asyncio.to_thread(
+                    subprocess.run,
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                # Clean up
+                Path(concat_file).unlink(missing_ok=True)
+                for seg_file in segment_files:
+                    Path(seg_file).unlink(missing_ok=True)
+            
+            return output_path
+            
+        except Exception as e:
+            logger.error(f"Silence removal error: {e}", exc_info=True)
+            raise
 
 # Singleton instance
 video_processing_service = VideoProcessingService()

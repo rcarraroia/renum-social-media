@@ -2,6 +2,7 @@ import * as React from "react";
 import { startOfMonth, endOfMonth, format, addMonths, subMonths } from "date-fns";
 import { getScheduledPosts } from "../services/posts";
 import { useAuthStore } from "../stores/authStore";
+import { api } from "@/lib/api";
 
 export type Post = any;
 
@@ -30,11 +31,16 @@ export function useCalendar() {
       const startIso = start.toISOString();
       const endIso = end.toISOString();
 
-      const { data } = await getScheduledPosts(orgId, startIso, endIso);
-      setPosts(data ?? []);
+      // Usar API client para carregar posts
+      const response = await api.calendar.listPosts({
+        start_date: startIso,
+        end_date: endIso,
+        status: "scheduled", // Apenas posts agendados
+      });
+      
+      setPosts(response.posts ?? []);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load posts", err);
+      console.error("Erro ao carregar posts:", err);
       setPosts([]);
     } finally {
       setLoading(false);

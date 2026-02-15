@@ -5,6 +5,7 @@ import { StatCard, ModuleCard, ActivityList } from "@/components/dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { showError } from "@/utils/toast";
+import { api, DashboardStats, SocialAccountsResponse } from "@/lib/api";
 
 type RemoteStats = {
   videosCreated: number;
@@ -29,41 +30,33 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     async function loadStats() {
       try {
-        const res = await fetch("/api/dashboard/stats");
-        if (res.ok) {
-          const j = await res.json();
-          setApiStats({
-            videosCreated: j.videosCreated ?? localStats?.videosCount ?? 0,
-            postsScheduled: j.postsScheduled ?? localStats?.postsScheduled ?? 0,
-            postsPublished: j.postsPublished ?? 0,
-            engagementTotal: j.engagementTotal ?? 0,
-          });
-        } else {
-          setApiStats(null);
-        }
+        const stats = await api.dashboard.getStats();
+        setApiStats({
+          videosCreated: stats.videos_total ?? localStats?.videosCount ?? 0,
+          postsScheduled: stats.posts_scheduled_month ?? localStats?.postsScheduled ?? 0,
+          postsPublished: stats.posts_published_month ?? 0,
+          engagementTotal: stats.engagement_total ?? 0,
+        });
       } catch (e) {
+        console.error("Erro ao carregar estatísticas:", e);
         setApiStats(null);
       }
     }
 
     async function loadSocials() {
       try {
-        const res = await fetch("/api/integrations/social-accounts");
-        if (res.ok) {
-          const data = await res.json();
-          const map: Record<string, any> = {};
-          (data ?? []).forEach((s: any) => {
-            map[s.platform] = { connected: !!s.connected, accountName: s.accountName ?? null };
-          });
-          // ensure keys
-          ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"].forEach((p) => {
-            if (!map[p]) map[p] = { connected: false, accountName: null };
-          });
-          setSocials(map);
-        } else {
-          setSocials({});
-        }
-      } catch {
+        const data = await api.social.listAccounts();
+        const map: Record<string, any> = {};
+        (data.accounts ?? []).forEach((s) => {
+          map[s.platform] = { connected: !!s.connected, accountName: s.account_name ?? null };
+        });
+        // ensure keys
+        ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"].forEach((p) => {
+          if (!map[p]) map[p] = { connected: false, accountName: null };
+        });
+        setSocials(map);
+      } catch (e) {
+        console.error("Erro ao carregar redes sociais:", e);
         setSocials({});
       }
     }

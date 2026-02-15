@@ -8,13 +8,17 @@ supabase: Client = create_client(settings.supabase_url, settings.supabase_servic
 
 async def get_organization_by_user_id(user_id: str) -> Optional[str]:
     """
-    Busca organization_id do usuário (async wrapper)
+    Busca organization_id do usuário diretamente com service role (bypass RLS)
     """
-    def _sync():
-        return supabase.table("users").select("organization_id").eq("id", user_id).single().execute()
-    res = await asyncio.to_thread(_sync)
-    data = res.data if hasattr(res, "data") else res.get("data")
-    return data.get("organization_id") if data else None
+    def _sync_direct():
+        return supabase.table("users").select("organization_id").eq("id", user_id).limit(1).execute()
+    
+    try:
+        res = await asyncio.to_thread(_sync_direct)
+        data = res.data[0] if res.data and len(res.data) > 0 else None
+        return data.get("organization_id") if data else None
+    except Exception as e:
+        return None
 
 async def log_api_call(
     organization_id: Optional[str],

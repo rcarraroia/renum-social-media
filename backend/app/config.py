@@ -18,8 +18,9 @@ class Settings(BaseSettings):
     deepgram_api_key: str | None = Field(None, env="DEEPGRAM_API_KEY")
     whisper_model: str = Field("base", env="WHISPER_MODEL")
     
-    # Metricool
-    metricool_access_token: str | None = Field(None, env="METRICOOL_ACCESS_TOKEN")
+    # Metricool (system-level credentials)
+    metricool_user_token: str | None = Field(None, env="METRICOOL_USER_TOKEN")
+    metricool_user_id: str | None = Field(None, env="METRICOOL_USER_ID")
     
     # Encryption
     encryption_key: str = Field(..., env="ENCRYPTION_KEY")

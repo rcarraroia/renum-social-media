@@ -7,6 +7,7 @@ import PlatformBadge from "../components/calendar/PlatformBadge";
 import { format } from "date-fns";
 import { getAvailableVideos, createScheduledPost, deleteScheduledPost, updateScheduledPost } from "../services/posts";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
+import { api } from "@/lib/api";
 
 const ALL_PLATFORMS = ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"];
 
@@ -43,27 +44,21 @@ const CalendarPage: React.FC = () => {
     }
     loadVideos();
 
-    // load connected platforms
+    // load connected platforms via API client
     (async () => {
       try {
-        const res = await fetch("/api/integrations/social-accounts");
-        if (res.ok) {
-          const data = await res.json();
-          const map: Record<string, boolean> = {};
-          (data ?? []).forEach((d: any) => {
-            map[d.platform] = !!d.connected;
-          });
-          // ensure all platforms keys exist
-          ALL_PLATFORMS.forEach((p) => {
-            if (map[p] === undefined) map[p] = false;
-          });
-          setConnectedPlatforms(map);
-        } else {
-          const map: Record<string, boolean> = {};
-          ALL_PLATFORMS.forEach((p) => (map[p] = false));
-          setConnectedPlatforms(map);
-        }
-      } catch {
+        const data = await api.social.listAccounts();
+        const map: Record<string, boolean> = {};
+        (data.accounts ?? []).forEach((d) => {
+          map[d.platform] = !!d.connected;
+        });
+        // ensure all platforms keys exist
+        ALL_PLATFORMS.forEach((p) => {
+          if (map[p] === undefined) map[p] = false;
+        });
+        setConnectedPlatforms(map);
+      } catch (e) {
+        console.error("Erro ao carregar plataformas conectadas:", e);
         const map: Record<string, boolean> = {};
         ALL_PLATFORMS.forEach((p) => (map[p] = false));
         setConnectedPlatforms(map);

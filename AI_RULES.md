@@ -1,5 +1,11 @@
 # Tech Stack
 
+## Idioma / Language
+- Todas as suas respostas, relatórios, documentação e comentários devem ser em português brasileiro (PT-BR). Isso inclui nomes de tasks, mensagens de status, explicações e qualquer comunicação.
+- Inglês apenas dentro de código (variáveis, funções, comentários técnicos inline).
+
+## Stack Principal
+
 - You are building a React application.
 - Use TypeScript.
 - Use React Router. KEEP the routes in src/App.tsx

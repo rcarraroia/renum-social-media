@@ -44,6 +44,124 @@ class TranscriptionService:
         else:
             return await self._transcribe_whisper(audio_path, language)
     
+    async def transcribe_video(
+        self,
+        video_url: str,
+        language: str = "pt"
+    ) -> Dict[str, Any]:
+        """
+        Transcribe video by extracting audio and transcribing
+        
+        Args:
+            video_url: URL or path to video file
+            language: Language code
+            
+        Returns:
+            Dict with transcription, segments, waveform, language, duration
+        """
+        import tempfile
+        import urllib.request
+        from app.services.video_processing import VideoProcessingService
+        
+        try:
+            # Download video to temp file
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_video:
+                video_path = tmp_video.name
+                urllib.request.urlretrieve(video_url, video_path)
+            
+            # Extract audio
+            video_service = VideoProcessingService()
+            audio_path = video_path.replace(".mp4", ".wav")
+            await video_service.extract_audio(video_path, audio_path)
+            
+            # Get video duration
+            info = await video_service.get_video_info(video_path)
+            duration = info["duration"]
+            
+            # Generate waveform data
+            waveform = await self._generate_waveform(audio_path, duration)
+            
+            # Transcribe audio
+            result = await self.transcribe_audio(audio_path, language)
+            
+            # Clean up temp files
+            Path(video_path).unlink(missing_ok=True)
+            Path(audio_path).unlink(missing_ok=True)
+            
+            return {
+                "transcription": result["text"],
+                "segments": result["segments"],
+                "waveform": waveform,
+                "language": result["language"],
+                "duration": duration
+            }
+            
+        except Exception as e:
+            logger.error(f"Video transcription error: {e}", exc_info=True)
+            raise
+    
+    async def _generate_waveform(self, audio_path: str, duration: float, samples: int = 100) -> list:
+        """
+        Generate waveform data for audio visualization
+        
+        Args:
+            audio_path: Path to audio file
+            duration: Duration in seconds
+            samples: Number of waveform samples to generate
+            
+        Returns:
+            List of amplitude values (0.0 to 1.0)
+        """
+        try:
+            import subprocess
+            import json
+            
+            # Use FFmpeg to extract audio stats
+            cmd = [
+                "ffmpeg",
+                "-i", audio_path,
+                "-af", f"astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-",
+                "-f", "null",
+                "-"
+            ]
+            
+            result = await asyncio.to_thread(
+                subprocess.run,
+                cmd,
+                capture_output=True,
+                text=True
+            )
+            
+            # Parse RMS levels from output
+            lines = result.stderr.split("\n")
+            rms_values = []
+            
+            for line in lines:
+                if "lavfi.astats.Overall.RMS_level" in line:
+                    try:
+                        value = float(line.split("=")[-1].strip())
+                        # Convert dB to 0-1 range (approximate)
+                        normalized = max(0, min(1, (value + 60) / 60))
+                        rms_values.append(normalized)
+                    except:
+                        pass
+            
+            # Downsample to desired number of samples
+            if len(rms_values) > samples:
+                step = len(rms_values) / samples
+                waveform = [rms_values[int(i * step)] for i in range(samples)]
+            else:
+                # Upsample or use as is
+                waveform = rms_values + [0.0] * (samples - len(rms_values))
+            
+            return waveform[:samples]
+            
+        except Exception as e:
+            logger.warning(f"Waveform generation failed: {e}")
+            # Return dummy waveform
+            import random
+            return [random.random() * 0.5 for _ in range(samples)]
+    
     async def _transcribe_deepgram(
         self, 
         audio_path: str,

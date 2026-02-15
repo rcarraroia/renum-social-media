@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Idioma / Language
+- Todas as suas respostas, relatórios, documentação e comentários devem ser em português brasileiro (PT-BR). Isso inclui nomes de tasks, mensagens de status, explicações e qualquer comunicação.
+- Inglês apenas dentro de código (variáveis, funções, comentários técnicos inline).
+
 ## Dev environment tips
 - Install dependencies with `npm install` before running scaffolds.
 - Use `npm run dev` for the interactive TypeScript session that powers local experimentation.

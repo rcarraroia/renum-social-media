@@ -7,6 +7,9 @@ export default defineConfig(() => ({
   server: {
     host: "::",
     port: 8080,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
   },
   plugins: [dyadComponentTagger(), react()],
   resolve: {
@@ -14,4 +17,8 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    force: true,
+  },
+  cacheDir: '.vite',
 }));

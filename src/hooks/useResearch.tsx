@@ -2,6 +2,7 @@ import * as React from "react";
 import { createResearchVideo, saveGeneratedScript } from "../services/research";
 import { useAuthStore } from "../stores/authStore";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
+import { api } from "@/lib/api";
 
 type Status = "idle" | "searching" | "generating" | "ready" | "error";
 
@@ -13,40 +14,6 @@ type Draft = {
   created_at: string;
   estimated_seconds?: number;
 };
-
-const MOCK_SCRIPT = `
-[ABERTURA - 0:00-0:10]
-Você sabia que 80% das brasileiras têm deficiência de vitamina D? 🌞 Isso afeta diretamente a saúde da sua pele!
-
-[DESENVOLVIMENTO - 0:10-1:00]
-A vitamina D é essencial para:
-
-✨ Renovação celular - Estimula a produção de colágeno e elastina, mantendo a pele firme
-
-💪 Proteção natural - Fortalece a barreira cutânea contra agressores externos
-
-🧠 Anti-inflamatória - Reduz vermelhidão, acne e dermatites
-
-[FECHAMENTO - 1:00-1:20]
-Quer saber se você tem deficiência de vitamina D? Comente aqui embaixo! E se você é consultora, aproveite para compartilhar produtos com vitamina D que podem ajudar suas clientes! 💖
-`.trim();
-
-const MOCK_SOURCES = [
-  {
-    title: "Sociedade Brasileira de Dermatologia - Vitamina D e Pele",
-    url: "https://sbd.org.br/vitamina-d-pele",
-    snippet: "Estudo mostra que 80% das brasileiras apresentam níveis insuficientes..."
-  },
-  {
-    title: "PubMed: Vitamin D and Skin Health",
-    url: "https://pubmed.ncbi.nlm.nih.gov/12345",
-    snippet: "Níveis adequados podem reduzir sinais de envelhecimento..."
-  },
-];
-
-function draftStorageKey(userId?: string) {
-  return `renum_script_drafts_${userId ?? "anon"}`;
-}
 
 export function useResearch() {
   const user = useAuthStore((s) => s.user);
@@ -92,43 +59,60 @@ export function useResearch() {
     }
 
     setStatus("searching");
+    const toastId = showLoading("Gerando script com IA...");
+    
     try {
-      const toastId = showLoading("Criando rascunho e pesquisando...");
-      // Call real backend in future
-      // const { data, error: cErr } = await createResearchVideo(orgId, userId, theme, audience);
+      const response = await api.scriptai.generateScript({
+        topic: theme,
+        audience,
+        tone: "professional",
+        duration: 60,
+        language: "pt",
+      });
+      
       dismissToast(toastId);
-
-      // Mock generation
-      setTimeout(() => {
-        setScript(MOCK_SCRIPT);
-        setSources(MOCK_SOURCES);
-        setStatus("ready");
-        setStep(2);
-        showSuccess("Script gerado com sucesso (mock)");
-      }, 1000);
+      setScript(response.script);
+      setSources(response.sources ?? []);
+      setStatus("ready");
+      setStep(2);
+      showSuccess("Script gerado com sucesso!");
     } catch (err: any) {
+      dismissToast(toastId);
       setStatus("error");
-      setError(err?.message ?? "Erro ao iniciar pesquisa");
-      showError(err?.message ?? "Erro ao iniciar pesquisa");
-      return;
+      setError(err?.message ?? "Erro ao gerar script");
+      showError(err?.message ?? "Erro ao gerar script");
     }
   }, [theme, audience, orgId, userId, validateThemeInput]);
 
   const regenerateScript = React.useCallback(async (feedback?: string) => {
-    if (!videoId && !theme) {
-      showError("Tema ou rascunho necessário para regenerar");
+    if (!theme) {
+      showError("Tema necessário para regenerar");
       return;
     }
+    
     setStatus("generating");
     const toastId = showLoading("Regerando script...");
-    // MOCK
-    setTimeout(() => {
+    
+    try {
+      const response = await api.scriptai.regenerateScript({
+        topic: theme,
+        script: script,
+        feedback: feedback ?? "Gere uma versão alternativa",
+        audience,
+      });
+      
       dismissToast(toastId);
-      setScript((s) => (s ? s + "\n\n(versão regenerada)" : MOCK_SCRIPT));
+      setScript(response.script);
+      setSources(response.sources ?? []);
       setStatus("ready");
-      showSuccess("✅ Novo script gerado (mock)");
-    }, 1500);
-  }, [videoId, theme]);
+      showSuccess("Novo script gerado!");
+    } catch (err: any) {
+      dismissToast(toastId);
+      setStatus("error");
+      setError(err?.message ?? "Erro ao regenerar script");
+      showError(err?.message ?? "Erro ao regenerar script");
+    }
+  }, [theme, script, audience]);
 
   const approveScript = React.useCallback(async () => {
     if (!script || script.trim().length === 0) {
@@ -139,69 +123,80 @@ export function useResearch() {
     setStep(3);
   }, [script]);
 
-  // Draft helpers (localStorage-backed mock)
-  const loadDrafts = React.useCallback(() => {
+  // Draft helpers - migrados para API backend
+  const loadDrafts = React.useCallback(async () => {
     setLoadingDrafts(true);
     try {
-      const raw = localStorage.getItem(draftStorageKey(userId));
-      const arr: Draft[] = raw ? JSON.parse(raw) : [];
-      setDrafts(arr);
+      const response = await api.scriptai.listDrafts();
+      const mappedDrafts: Draft[] = response.drafts.map((d) => ({
+        id: d.id,
+        theme: d.topic ?? d.title,
+        audience: d.audience ?? "general",
+        script: d.script,
+        created_at: d.created_at,
+        estimated_seconds: Math.round((d.script?.split(/\s+/).length ?? 0) * 0.5),
+      }));
+      setDrafts(mappedDrafts);
     } catch (e) {
+      console.error("Erro ao carregar rascunhos:", e);
       setDrafts([]);
     } finally {
       setLoadingDrafts(false);
     }
-  }, [userId]);
+  }, []);
 
   const saveDraft = React.useCallback(async (payload: { theme: string; audience: string; script: string; estimated_seconds?: number }) => {
     setSavingDraft(true);
     try {
-      const id = `draft_${Date.now()}`;
-      const d: Draft = {
-        id,
-        theme: payload.theme,
-        audience: payload.audience,
+      const response = await api.scriptai.saveDraft({
+        title: payload.theme,
         script: payload.script,
-        created_at: new Date().toISOString(),
-        estimated_seconds: payload.estimated_seconds ?? Math.round((payload.script?.split(/\s+/).length ?? 0) * 0.5),
-      };
-      const raw = localStorage.getItem(draftStorageKey(userId));
-      const arr: Draft[] = raw ? JSON.parse(raw) : [];
-      arr.unshift(d);
-      localStorage.setItem(draftStorageKey(userId), JSON.stringify(arr));
-      setDrafts(arr);
+        topic: payload.theme,
+        audience: payload.audience,
+        sources: sources,
+        metadata: {
+          estimated_seconds: payload.estimated_seconds ?? Math.round((payload.script?.split(/\s+/).length ?? 0) * 0.5),
+        },
+      });
+      
+      // Recarregar lista de rascunhos
+      await loadDrafts();
       showSuccess("Script salvo como rascunho!");
-      return d;
+      return response;
     } catch (e) {
+      console.error("Erro ao salvar rascunho:", e);
       showError("Erro ao salvar rascunho");
       return null;
     } finally {
       setSavingDraft(false);
     }
-  }, [userId]);
+  }, [sources, loadDrafts]);
 
-  const deleteDraft = React.useCallback((id: string) => {
-    const raw = localStorage.getItem(draftStorageKey(userId));
-    const arr: Draft[] = raw ? JSON.parse(raw) : [];
-    const next = arr.filter((d) => d.id !== id);
-    localStorage.setItem(draftStorageKey(userId), JSON.stringify(next));
-    setDrafts(next);
-    showSuccess("Rascunho removido");
-  }, [userId]);
-
-  const loadDraftIntoEditor = React.useCallback((id: string) => {
-    const raw = localStorage.getItem(draftStorageKey(userId));
-    const arr: Draft[] = raw ? JSON.parse(raw) : [];
-    const d = arr.find((x) => x.id === id);
-    if (!d) {
-      showError("Rascunho não encontrado");
-      return;
+  const deleteDraft = React.useCallback(async (id: string) => {
+    try {
+      await api.scriptai.deleteDraft(id);
+      // Recarregar lista de rascunhos
+      await loadDrafts();
+      showSuccess("Rascunho removido");
+    } catch (e) {
+      console.error("Erro ao deletar rascunho:", e);
+      showError("Erro ao deletar rascunho");
     }
-    setTheme(d.theme);
-    setAudience(d.audience);
-    setScript(d.script);
-    setStep(3); // move to journey selection directly (as if approved)
-  }, [userId]);
+  }, [loadDrafts]);
+
+  const loadDraftIntoEditor = React.useCallback(async (id: string) => {
+    try {
+      const draft = await api.scriptai.getDraft(id);
+      setTheme(draft.topic ?? draft.title);
+      setAudience(draft.audience ?? "general");
+      setScript(draft.script);
+      setSources(draft.sources ?? []);
+      setStep(3); // move to journey selection directly (as if approved)
+    } catch (e) {
+      console.error("Erro ao carregar rascunho:", e);
+      showError("Erro ao carregar rascunho");
+    }
+  }, []);
 
   const generateScript = createScript;
   const loading = status === "searching" || status === "generating";

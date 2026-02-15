@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../integrations/supabase/client";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 import { saveGeneratedVideo, incrementCreditsUsed } from "@/services/avatar";
+import { api } from "@/lib/api";
 
 /**
  * States:
@@ -164,7 +165,7 @@ export function useAvatar(initialVideoId?: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Generate video: will mock the flow but call backend placeholders if desired
+  // Generate video: chama backend via API client
   const generateVideo = React.useCallback(async () => {
     // pre-check credits
     const remaining = Math.max(0, (credits.total ?? 0) - (credits.used ?? 0));
@@ -177,54 +178,93 @@ export function useAvatar(initialVideoId?: string | null) {
     setState("generating");
     setError(null);
     setProgressStep(1);
+    
     try {
       const toastId = showLoading("Iniciando geração com HeyGen...");
-      // In a real integration we would call POST /api/modules/3/generate-video and obtain jobId
-      // We'll simulate a job id and poll steps
-      const fakeJobId = `job_${Date.now()}`;
-      setJobId(fakeJobId);
-
-      // Simulated step progression
-      // Step 1: sending script
-      await new Promise((r) => setTimeout(r, 900));
-      setProgressStep(1);
-
-      // Step 2: generating audio
-      await new Promise((r) => setTimeout(r, 1200));
-      setProgressStep(2);
-
-      // Step 3: rendering
-      await new Promise((r) => setTimeout(r, 1400));
-      setProgressStep(3);
-
-      // Step 4: finalizing
-      await new Promise((r) => setTimeout(r, 800));
-      setProgressStep(4);
-
-      // Mock video URL (use a sample mp4)
-      const MOCK_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
-      setVideoUrl(MOCK_VIDEO_URL);
-
-      // Decrement credits (best-effort)
-      try {
-        await incrementCreditsUsed(heygenConfig?.apiKey ? "" : ""); // best-effort call; actual implementation should send org id
-        // locally update credits mock
-        setCredits((c) => ({ ...c, used: Math.min((c.used ?? 0) + 1, c.total ?? c.used + 1) }));
-      } catch {
-        // ignore
-      }
-
+      
+      // 1. Chamar API para gerar vídeo
+      const response = await api.avatarai.generateVideo({
+        script,
+        avatarId: heygenConfig?.avatarId ?? "",
+        voiceId: heygenConfig?.voiceId ?? "",
+        title: theme || "Vídeo gerado com AvatarAI",
+      });
+      
+      setJobId(response.jobId);
       dismissToast(toastId);
-      setState("ready");
-      showSuccess("Vídeo gerado com sucesso (mock)");
-      return { data: { videoUrl: MOCK_VIDEO_URL } };
+      
+      // 2. Polling para verificar status
+      const pollToast = showLoading("Gerando vídeo...");
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutos (5s * 60)
+      
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        
+        try {
+          const statusResponse = await api.avatarai.getVideoStatus(response.jobId);
+          
+          // Atualizar progresso baseado no status
+          if (statusResponse.status === "processing") {
+            const progress = statusResponse.progress ?? 0;
+            if (progress < 25) setProgressStep(1);
+            else if (progress < 50) setProgressStep(2);
+            else if (progress < 75) setProgressStep(3);
+            else setProgressStep(4);
+          }
+          
+          // Verificar se completou
+          if (statusResponse.status === "completed") {
+            clearInterval(pollInterval);
+            dismissToast(pollToast);
+            
+            setVideoUrl(statusResponse.video_url ?? null);
+            setState("ready");
+            setProgressStep(4);
+            
+            // Atualizar créditos localmente
+            setCredits((c) => ({ ...c, used: Math.min((c.used ?? 0) + 1, c.total ?? c.used + 1) }));
+            
+            showSuccess("Vídeo gerado com sucesso!");
+            return { data: { videoUrl: statusResponse.video_url } };
+          }
+          
+          // Verificar se falhou
+          if (statusResponse.status === "failed") {
+            clearInterval(pollInterval);
+            dismissToast(pollToast);
+            
+            setState("failed");
+            setError(statusResponse.error ?? "Erro na geração do vídeo");
+            showError(statusResponse.error ?? "Erro na geração do vídeo");
+            return { error: statusResponse.error };
+          }
+          
+          // Timeout
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            dismissToast(pollToast);
+            
+            setState("failed");
+            setError("Timeout: geração demorou muito tempo");
+            showError("Timeout: geração demorou muito tempo");
+            return { error: "timeout" };
+          }
+        } catch (pollErr: any) {
+          console.error("Erro ao verificar status:", pollErr);
+          // Continuar tentando...
+        }
+      }, 5000); // Poll a cada 5 segundos
+      
     } catch (err: any) {
+      console.error("Erro ao gerar vídeo:", err);
       setState("failed");
       setError(err?.message ?? "Erro na geração");
+      showError(err?.message ?? "Erro na geração");
       return { error: err };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [credits, heygenConfig]);
+  }, [script, theme, credits, heygenConfig]);
 
   const cancelGeneration = React.useCallback(async () => {
     // For mock: just reset

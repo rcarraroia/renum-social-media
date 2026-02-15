@@ -6,6 +6,7 @@ import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast
 import { supabase } from "@/integrations/supabase/client";
 import SocialAccountCard from "../components/settings/SocialAccountCard";
 import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 /**
  * Types
@@ -54,30 +55,20 @@ const Settings: React.FC = () => {
   // Load social accounts and heygen credits on mount
   useEffect(() => {
     async function load() {
-      // Social accounts
+      // Social accounts via API client
       try {
-        const res = await fetch("/api/integrations/social-accounts");
-        if (res.ok) {
-          const data = await res.json();
-          // Expecting array: [{ platform, connected, accountName }]
-          const map: Record<string, SocialAccount> = {};
-          (data ?? []).forEach((s: any) => {
-            map[s.platform] = { platform: s.platform, connected: !!s.connected, accountName: s.accountName ?? null };
-          });
-          // ensure all platforms present
-          SOCIAL_PLATFORMS.forEach((p) => {
-            if (!map[p]) map[p] = { platform: p, connected: false, accountName: null };
-          });
-          setSocialAccounts(map);
-        } else {
-          // fallback: init defaults
-          const map: Record<string, SocialAccount> = {};
-          SOCIAL_PLATFORMS.forEach((p) => {
-            map[p] = { platform: p, connected: false, accountName: null };
-          });
-          setSocialAccounts(map);
-        }
+        const data = await api.social.listAccounts();
+        const map: Record<string, SocialAccount> = {};
+        (data.accounts ?? []).forEach((s) => {
+          map[s.platform] = { platform: s.platform, connected: !!s.connected, accountName: s.account_name ?? null };
+        });
+        // ensure all platforms present
+        SOCIAL_PLATFORMS.forEach((p) => {
+          if (!map[p]) map[p] = { platform: p, connected: false, accountName: null };
+        });
+        setSocialAccounts(map);
       } catch (e) {
+        console.error("Erro ao carregar contas sociais:", e);
         const map: Record<string, SocialAccount> = {};
         SOCIAL_PLATFORMS.forEach((p) => {
           map[p] = { platform: p, connected: false, accountName: null };
@@ -85,16 +76,12 @@ const Settings: React.FC = () => {
         setSocialAccounts(map);
       }
 
-      // HeyGen credits
+      // HeyGen credits via API client
       try {
-        const res2 = await fetch("/api/integrations/heygen/credits");
-        if (res2.ok) {
-          const j = await res2.json();
-          setHeygenCredits({ used: j.used ?? 0, total: j.total ?? 0 });
-        } else {
-          setHeygenCredits(null);
-        }
-      } catch {
+        const credits = await api.heygen.getCredits();
+        setHeygenCredits({ used: 0, total: credits.remaining_credits }); // Ajustar conforme estrutura real
+      } catch (e) {
+        console.error("Erro ao carregar créditos HeyGen:", e);
         setHeygenCredits(null);
       }
     }
@@ -134,32 +121,43 @@ const Settings: React.FC = () => {
   const handleConnect = async (platform: string) => {
     setSocialLoading((s) => ({ ...s, [platform]: true }));
     try {
-      const res = await fetch("/api/integrations/social-accounts/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform }),
-      });
-      if (res.ok) {
-        const j = await res.json();
-        // If backend returns an OAuth redirect URL, navigate there
-        if (j?.redirectUrl) {
-          window.location.href = j.redirectUrl;
-          return;
-        }
-        // Otherwise, simulate connected
-        setSocialAccounts((prev) => ({
-          ...prev,
-          [platform]: { platform, connected: true, accountName: j?.accountName ?? `@${platform}` },
-        }));
-        showSuccess(`${platform} conectado`);
-      } else {
-        const err = await res.text();
-        showError(err || "Falha ao iniciar conexão");
+      const response = await api.social.connect(platform);
+      
+      // Se backend retorna URL de OAuth, abrir em nova janela
+      if (response?.authorization_url) {
+        const authWindow = window.open(response.authorization_url, '_blank', 'width=600,height=700');
+        
+        // Implementar polling para verificar quando OAuth completar
+        const pollInterval = setInterval(async () => {
+          try {
+            const updatedAccounts = await api.social.listAccounts();
+            const account = updatedAccounts.accounts.find(a => a.platform === platform);
+            
+            if (account?.connected) {
+              clearInterval(pollInterval);
+              if (authWindow) authWindow.close();
+              
+              setSocialAccounts((prev) => ({
+                ...prev,
+                [platform]: { platform, connected: true, accountName: account.account_name ?? `@${platform}` },
+              }));
+              showSuccess(`${platform} conectado com sucesso!`);
+              setSocialLoading((s) => ({ ...s, [platform]: false }));
+            }
+          } catch (pollErr) {
+            console.error("Erro ao verificar status de conexão:", pollErr);
+          }
+        }, 3000); // Poll a cada 3 segundos
+        
+        // Timeout após 5 minutos
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          setSocialLoading((s) => ({ ...s, [platform]: false }));
+        }, 300000);
       }
     } catch (e: any) {
-      console.error(e);
-      showError("Erro ao conectar");
-    } finally {
+      console.error("Erro ao conectar:", e);
+      showError(e?.message ?? "Erro ao conectar");
       setSocialLoading((s) => ({ ...s, [platform]: false }));
     }
   };
@@ -168,20 +166,15 @@ const Settings: React.FC = () => {
     if (!confirm("Tem certeza que deseja desconectar esta conta?")) return;
     setSocialLoading((s) => ({ ...s, [platform]: true }));
     try {
-      const res = await fetch(`/api/integrations/social-accounts/${platform}`, { method: "DELETE" });
-      if (res.ok) {
-        setSocialAccounts((prev) => ({
-          ...prev,
-          [platform]: { platform, connected: false, accountName: null },
-        }));
-        showSuccess("Conta desconectada");
-      } else {
-        const err = await res.text();
-        showError(err || "Falha ao desconectar");
-      }
-    } catch (e) {
-      console.error(e);
-      showError("Erro ao desconectar");
+      await api.social.disconnect(platform);
+      setSocialAccounts((prev) => ({
+        ...prev,
+        [platform]: { platform, connected: false, accountName: null },
+      }));
+      showSuccess("Conta desconectada");
+    } catch (e: any) {
+      console.error("Erro ao desconectar:", e);
+      showError(e?.message ?? "Erro ao desconectar");
     } finally {
       setSocialLoading((s) => ({ ...s, [platform]: false }));
     }
@@ -195,35 +188,23 @@ const Settings: React.FC = () => {
     setHeygenTesting(true);
     setHeygenTestResult(null);
     try {
-      const res = await fetch("/api/integrations/heygen/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apiKey: heygenApiKey,
-          avatarId: heygenAvatarId || undefined,
-          voiceId: heygenVoiceId || undefined,
-        }),
-      });
-      const j = await res.json();
-      if (res.ok && j?.success) {
-        setHeygenTestResult({ ok: true, message: "Conexão válida!" });
+      const response = await api.heygen.test();
+      if (response.success) {
+        setHeygenTestResult({ ok: true, message: response.message ?? "Conexão válida!" });
         showSuccess("Conexão HeyGen válida!");
         // refresh credits
         try {
-          const cRes = await fetch("/api/integrations/heygen/credits");
-          if (cRes.ok) {
-            const cj = await cRes.json();
-            setHeygenCredits({ used: cj.used ?? 0, total: cj.total ?? 0 });
-          }
+          const credits = await api.heygen.getCredits();
+          setHeygenCredits({ used: 0, total: credits.remaining_credits });
         } catch {}
       } else {
-        setHeygenTestResult({ ok: false, message: j?.message ?? "Erro na conexão" });
-        showError(j?.message ?? "Erro ao testar HeyGen");
+        setHeygenTestResult({ ok: false, message: response.message ?? "Erro na conexão" });
+        showError(response.message ?? "Erro ao testar HeyGen");
       }
     } catch (e: any) {
-      console.error(e);
-      setHeygenTestResult({ ok: false, message: "Erro ao testar conexão" });
-      showError("Erro ao testar HeyGen");
+      console.error("Erro ao testar HeyGen:", e);
+      setHeygenTestResult({ ok: false, message: e?.message ?? "Erro ao testar conexão" });
+      showError(e?.message ?? "Erro ao testar HeyGen");
     } finally {
       setHeygenTesting(false);
     }
@@ -233,27 +214,22 @@ const Settings: React.FC = () => {
     setHeygenSaving(true);
     const toastId = showLoading("Salvando HeyGen...");
     try {
-      const res = await fetch("/api/integrations/heygen", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apiKey: heygenApiKey,
-          avatarId: heygenAvatarId || null,
-          voiceId: heygenVoiceId || null,
-        }),
+      const response = await api.heygen.configure({
+        api_key: heygenApiKey,
+        avatar_id: heygenAvatarId || undefined,
+        voice_id: heygenVoiceId || undefined,
       });
-      if (res.ok) {
-        dismissToast(toastId);
+      
+      dismissToast(toastId);
+      if (response.success) {
         showSuccess("Configuração HeyGen salva!");
       } else {
-        const err = await res.text();
-        dismissToast(toastId);
-        showError(err || "Erro ao salvar configuração");
+        showError(response.message ?? "Erro ao salvar configuração");
       }
-    } catch (e) {
+    } catch (e: any) {
       dismissToast(toastId);
-      console.error(e);
-      showError("Erro ao salvar HeyGen");
+      console.error("Erro ao salvar HeyGen:", e);
+      showError(e?.message ?? "Erro ao salvar HeyGen");
     } finally {
       setHeygenSaving(false);
     }

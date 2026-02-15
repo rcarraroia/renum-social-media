@@ -2,8 +2,19 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.utils.logger import setup_logger
-from app.api.routes import health, integrations, modules, webhooks
+from app.utils.logger import setup_logger, register_logging_middlewares
+from app.api.error_handlers import register_error_handlers
+from app.api.routes import (
+    health, 
+    integrations, 
+    webhooks, 
+    module2, 
+    module3, 
+    module1, 
+    social_accounts,
+    calendar,
+    dashboard
+)
 
 logger = setup_logger()
 
@@ -26,14 +37,22 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+# Registrar middlewares de logging (request_id e logging estruturado)
+# Validates: Requirements 10.3, 10.5
+register_logging_middlewares(app)
+
+# Registrar error handlers globais
+# Validates: Requirements 12.1, 12.2, 12.3, 12.4
+register_error_handlers(app)
 
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
-app.include_router(modules.router, prefix="/modules", tags=["Modules"])
+app.include_router(social_accounts.router, tags=["Integrations"])
+app.include_router(calendar.router, tags=["Calendar"])
+app.include_router(dashboard.router, tags=["Dashboard"])
+app.include_router(module1.router, prefix="/api/modules/1", tags=["Module 1 - ScriptAI"])
+app.include_router(module2.router, prefix="/api/modules/2", tags=["Module 2 - PostRápido"])
+app.include_router(module3.router, prefix="/api/modules/3", tags=["Module 3 - AvatarAI"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 
 @app.on_event("startup")
