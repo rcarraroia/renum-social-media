@@ -28,12 +28,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* Public */}
+          <Route path="/" element={<PostsFlowsLanding />} />
+          <Route path="/posts-flows" element={<PostsFlowsLanding />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/posts-flows" element={<PostsFlowsLanding />} />
-
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Protected */}
           <Route
