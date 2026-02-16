@@ -1,4 +1,4 @@
-import { Clock, FileText, Camera, Calendar, TrendingDown } from 'lucide-react';
+import { Clock, FileText, Camera, Calendar, TrendingDown, RefreshCw } from 'lucide-react';
 
 const problems = [
   {
@@ -20,6 +20,10 @@ const problems = [
   {
     icon: TrendingDown,
     text: 'Baixo engajamento com conteúdo inconsistente',
+  },
+  {
+    icon: RefreshCw,
+    text: 'Retrabalho ao publicar em múltiplas redes sociais',
   },
 ];
 

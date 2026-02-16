@@ -50,6 +50,12 @@ export default function PostsFlowsLanding() {
 
       if (error) {
         console.error('Erro ao salvar lead:', error);
+        
+        // Verificar se é erro de email duplicado
+        if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          throw new Error('Este email já está cadastrado na lista de espera');
+        }
+        
         throw new Error(error.message || 'Erro ao enviar formulário');
       }
 
