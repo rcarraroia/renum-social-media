@@ -16,6 +16,7 @@ import CalendarPage from "@/pages/Calendar";
 import Analytics from "@/pages/Analytics";
 import Module1 from "./pages/Module1";
 import Module3 from "./pages/Module3";
+import PostsFlowsLanding from "./pages/PostsFlowsLanding";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/posts-flows" element={<PostsFlowsLanding />} />
 
           {/* Root redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -53,7 +53,7 @@ const ProfileCard: React.FC<{
 
 const ProfileSelector: React.FC<Props> = ({ value = [], onChange, showAll = false }) => {
   const [expanded, setExpanded] = React.useState<boolean>(showAll);
-  const visible = expanded ? USER_PROFILES : USER_PROFILES.slice(0, 5);
+  const visible = expanded ? USER_PROFILES : USER_PROFILES.slice(0, 3);
 
   const toggle = (id: string) => {
     if (value.includes(id)) {
@@ -65,7 +65,7 @@ const ProfileSelector: React.FC<Props> = ({ value = [], onChange, showAll = fals
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
         {visible.map((p) => (
           <ProfileCard key={p.id} profile={p} selected={value.includes(p.id)} onToggle={toggle} />
         ))}

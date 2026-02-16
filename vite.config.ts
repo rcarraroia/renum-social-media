@@ -10,6 +10,9 @@ export default defineConfig(() => ({
     headers: {
       'Cache-Control': 'no-store',
     },
+    hmr: {
+      overlay: true,
+    },
   },
   plugins: [dyadComponentTagger(), react()],
   resolve: {
@@ -19,6 +22,13 @@ export default defineConfig(() => ({
   },
   optimizeDeps: {
     force: true,
+    esbuildOptions: {
+      target: 'esnext',
+    },
+  },
+  build: {
+    target: 'esnext',
   },
   cacheDir: '.vite',
+  clearScreen: false,
 }));

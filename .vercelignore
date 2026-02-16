@@ -1,0 +1,34 @@
+# Backend (não fazer deploy no Vercel)
+backend/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Kiro AI / Development files
+.agent/
+.agents/
+.context/
+.kiro/
+AGENTS.md
+AI_RULES.md
+MCP_SETUP.md
+POSTS_FLOWS_LANDING.md
+POSTS_FLOWS_SETUP.md
+TESTE_TAVILY_MCP.md
+WINDOWS_MCP_SETUP.md
+DESCRICAO_APP.md
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+.idea/
+
+# Environment (usar Vercel Environment Variables)
+.env
+.env.local
+.env.production
