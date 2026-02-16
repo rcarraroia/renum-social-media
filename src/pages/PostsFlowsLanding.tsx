@@ -11,8 +11,9 @@ import { SolutionSection } from '@/components/Landing/SolutionSection';
 import { SocialNetworksSection } from '@/components/Landing/SocialNetworksSection';
 import { BenefitsSection } from '@/components/Landing/BenefitsSection';
 import { DifferentialsSection } from '@/components/Landing/DifferentialsSection';
-import { TestimonialsSection } from '@/components/Landing/TestimonialsSection';
+import { SocialProofSection } from '@/components/Landing/SocialProofSection';
 import { GuaranteeSection } from '@/components/Landing/GuaranteeSection';
+import { FAQSection } from '@/components/Landing/FAQSection';
 import { supabase } from '@/integrations/supabase/client';
 import { CountdownSection } from '@/components/Landing/CountdownSection';
 import { toast } from 'sonner';
@@ -197,8 +198,8 @@ export default function PostsFlowsLanding() {
             {/* Differentials Section */}
             <DifferentialsSection />
 
-            {/* Testimonials Section */}
-            <TestimonialsSection />
+            {/* Social Proof Section (condicional - mínimo 10 em 3 perfis) */}
+            <SocialProofSection />
 
             {/* Guarantee Section */}
             <GuaranteeSection />
@@ -231,23 +232,6 @@ export default function PostsFlowsLanding() {
             {/* Social Proof */}
             <div className="container mx-auto px-4 pb-16">
               <div className="text-center space-y-4">
-                <div className="flex items-center justify-center gap-2 text-gray-600">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold"
-                      >
-                        {String.fromCharCode(64 + i)}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-sm font-medium">
-                    <span className="font-bold text-blue-600">342 pessoas</span> já se
-                    inscreveram
-                  </span>
-                </div>
-
                 <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -264,6 +248,9 @@ export default function PostsFlowsLanding() {
                 </div>
               </div>
             </div>
+
+            {/* FAQ Section */}
+            <FAQSection />
           </>
         )}
       </main>
