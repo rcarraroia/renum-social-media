@@ -44,10 +44,9 @@ export default function PostsFlowsLanding() {
       };
 
       // Salvar direto no Supabase (temporário até backend estar pronto)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('leads')
-        .insert([payload])
-        .select();
+        .insert([payload]);
 
       if (error) {
         console.error('Erro ao salvar lead:', error);
