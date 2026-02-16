@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Instagram, 
   Facebook, 
@@ -9,7 +11,9 @@ import {
   MessageCircle,
   Globe,
   Pin,
-  Twitch
+  Twitch,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const socialNetworks = [
@@ -82,6 +86,24 @@ const socialNetworks = [
 ];
 
 export function SocialNetworksSection() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    align: 'start',
+    slidesToScroll: 1,
+    breakpoints: {
+      '(min-width: 768px)': { slidesToScroll: 2 },
+      '(min-width: 1024px)': { slidesToScroll: 3 },
+    },
+  });
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
   return (
     <section className="py-20 bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
       <div className="container mx-auto px-4">
@@ -101,50 +123,88 @@ export function SocialNetworksSection() {
           </h2>
           
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Crie uma vez, publique em todos os lugares. O Posts Flows conecta você
+            Crie uma vez, publique em todos os lugares. O App conecta você
             com as principais plataformas do mercado.
           </p>
         </div>
 
-        {/* Social Networks Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
-          {socialNetworks.map((network, index) => {
-            const Icon = network.icon;
-            
-            return (
-              <div
-                key={network.name}
-                className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-white/20"
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-              >
-                {/* Icon with Gradient Background */}
-                <div className="mb-4">
+        {/* Carousel Container */}
+        <div className="relative max-w-7xl mx-auto mb-12">
+          {/* Navigation Buttons */}
+          <button
+            onClick={scrollPrev}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+
+          <button
+            onClick={scrollNext}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label="Próximo"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Embla Carousel */}
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-6">
+              {socialNetworks.map((network, index) => {
+                const Icon = network.icon;
+                
+                return (
                   <div
-                    className={`w-14 h-14 rounded-lg bg-gradient-to-br ${network.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                    key={network.name}
+                    className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_calc(50%-12px)] lg:flex-[0_0_calc(33.333%-16px)]"
                   >
-                    <Icon className="w-7 h-7 text-white" />
+                    <div
+                      className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-white/20 h-full"
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                      }}
+                    >
+                      {/* Icon with Gradient Background */}
+                      <div className="mb-6">
+                        <div
+                          className={`w-20 h-20 rounded-xl bg-gradient-to-br ${network.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg`}
+                        >
+                          <Icon className="w-10 h-10 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Network Name */}
+                      <h3 className="text-2xl font-bold mb-3 text-white">
+                        {network.name}
+                      </h3>
+
+                      {/* Formats */}
+                      <p className="text-base text-gray-400 group-hover:text-gray-300 transition-colors">
+                        {network.formats}
+                      </p>
+
+                      {/* Hover Effect Border */}
+                      <div
+                        className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${network.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none`}
+                      />
+                    </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </div>
 
-                {/* Network Name */}
-                <h3 className="text-lg font-bold mb-2 text-white">
-                  {network.name}
-                </h3>
-
-                {/* Formats */}
-                <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                  {network.formats}
-                </p>
-
-                {/* Hover Effect Border */}
-                <div
-                  className={`absolute inset-0 rounded-xl bg-gradient-to-br ${network.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none`}
-                />
-              </div>
-            );
-          })}
+          {/* Dots Indicator */}
+          <div className="flex justify-center gap-2 mt-8">
+            {socialNetworks.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => emblaApi?.scrollTo(index)}
+                className="w-2 h-2 rounded-full bg-white/30 hover:bg-white/50 transition-all duration-300"
+                aria-label={`Ir para slide ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Bottom CTA */}
@@ -168,7 +228,7 @@ export function SocialNetworksSection() {
 
           <p className="text-gray-400 max-w-2xl mx-auto">
             Não perca mais tempo copiando e colando conteúdo entre plataformas.
-            Com o Posts Flows, você agenda uma vez e publica em todas as suas redes
+            Com O App, você agenda uma vez e publica em todas as suas redes
             automaticamente.
           </p>
         </div>
