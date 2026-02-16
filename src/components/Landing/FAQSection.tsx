@@ -114,7 +114,14 @@ export function FAQSection() {
               Ainda tem dúvidas?{' '}
               <a
                 href="#form"
-                className="font-bold text-blue-600 hover:text-blue-700 underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('form')?.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }}
+                className="font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer"
               >
                 Inscreva-se agora
               </a>{' '}

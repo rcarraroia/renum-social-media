@@ -205,7 +205,7 @@ export default function PostsFlowsLanding() {
             <GuaranteeSection />
 
             {/* Form Section */}
-            <div className="container mx-auto px-4 py-16 md:py-24">
+            <div id="form" className="container mx-auto px-4 py-16 md:py-24 scroll-mt-20">
               <div className="max-w-5xl mx-auto">
                 <div className="text-center space-y-4 mb-12">
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
