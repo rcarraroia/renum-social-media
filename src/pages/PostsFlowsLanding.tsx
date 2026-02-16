@@ -143,7 +143,7 @@ export default function PostsFlowsLanding() {
                   <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                     transformar suas redes sociais
                   </span>{' '}
-                  em uma máquina de vendas
+                  em uma máquina de Audiência
                 </h1>
 
                 <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">

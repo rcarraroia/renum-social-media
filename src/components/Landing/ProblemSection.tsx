@@ -29,12 +29,10 @@ export function ProblemSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-            Você está perdendo tempo precioso criando conteúdo para redes sociais?
+            Sua produção de conteúdo está consumindo mais tempo do que deveria?
           </h2>
           <p className="text-xl text-gray-600">
-            Consultoras e políticos perdem{' '}
-            <span className="font-bold text-red-600">horas por semana</span> criando,
-            editando e agendando posts
+            Profissionais e empreendedores gastam horas excessivas em tarefas repetitivas de postagem. Automatize a criação e o agendamento e foque no que realmente importa.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
