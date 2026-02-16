@@ -13,6 +13,7 @@ import { BenefitsSection } from '@/components/Landing/BenefitsSection';
 import { DifferentialsSection } from '@/components/Landing/DifferentialsSection';
 import { TestimonialsSection } from '@/components/Landing/TestimonialsSection';
 import { GuaranteeSection } from '@/components/Landing/GuaranteeSection';
+import { supabase } from '@/integrations/supabase/client';
 import { CountdownSection } from '@/components/Landing/CountdownSection';
 import { toast } from 'sonner';
 import { CheckCircle2, Sparkles, TrendingUp, Zap } from 'lucide-react';
@@ -41,17 +42,15 @@ export default function PostsFlowsLanding() {
         whatsapp: contactData.whatsapp,
       };
 
-      // TODO: Integrar com backend real
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      // Salvar direto no Supabase (temporário até backend estar pronto)
+      const { data, error } = await supabase
+        .from('leads')
+        .insert([payload])
+        .select();
 
-      if (!response.ok) {
-        throw new Error('Erro ao enviar formulário');
+      if (error) {
+        console.error('Erro ao salvar lead:', error);
+        throw new Error(error.message || 'Erro ao enviar formulário');
       }
 
       setFormState('success');
@@ -61,7 +60,7 @@ export default function PostsFlowsLanding() {
     } catch (error) {
       setFormState('error');
       toast.error('Erro ao enviar formulário', {
-        description: 'Por favor, tente novamente mais tarde.',
+        description: error instanceof Error ? error.message : 'Por favor, tente novamente mais tarde.',
       });
       console.error('Error submitting form:', error);
     }
