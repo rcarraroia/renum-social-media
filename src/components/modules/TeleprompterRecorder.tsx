@@ -303,7 +303,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         canvasStreamRef.current = canvasStream;
         console.log('[Teleprompter] Canvas stream salvo em ref');
 
-        // Setup preview with canvas stream - wait for stream to be ready
+        // Setup preview with canvas stream - NON-BLOCKING
         if (previewVideoRef.current) {
           console.log('[Teleprompter] Configurando preview video...');
           // Clear any previous srcObject to avoid conflicts
@@ -315,18 +315,23 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
           
           previewVideoRef.current.srcObject = canvasStream;
           
-          // Wait for video to be ready before playing
-          try {
-            console.log('[Teleprompter] Tentando iniciar preview video...');
-            await previewVideoRef.current.play();
+          // Try to play but don't block if it fails
+          console.log('[Teleprompter] Tentando iniciar preview video (non-blocking)...');
+          previewVideoRef.current.play().then(() => {
             console.log('[Teleprompter] Preview video iniciado com sucesso!');
-          } catch (err) {
-            console.warn('[Teleprompter] Preview video play interrupted, retrying...', err);
-            // Retry once after a small delay
-            await new Promise(resolve => setTimeout(resolve, 100));
-            await previewVideoRef.current.play();
-            console.log('[Teleprompter] Preview video iniciado após retry!');
-          }
+          }).catch((err) => {
+            console.warn('[Teleprompter] Preview video play failed, will retry:', err);
+            // Retry after a delay
+            setTimeout(() => {
+              if (previewVideoRef.current) {
+                previewVideoRef.current.play().then(() => {
+                  console.log('[Teleprompter] Preview video iniciado após retry!');
+                }).catch((retryErr) => {
+                  console.error('[Teleprompter] Preview video play failed after retry:', retryErr);
+                });
+              }
+            }, 200);
+          });
         } else {
           console.error('[Teleprompter] previewVideoRef.current é null!');
         }
