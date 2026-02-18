@@ -48,6 +48,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   const [recordingTime, setRecordingTime] = useState(0);
   const [cameraReady, setCameraReady] = useState(false);
   const [recordTextInVideo, setRecordTextInVideo] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Refs para vídeo, canvas e preview
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -235,8 +236,10 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   }, [cameraReady, recordTextInVideo, script, teleprompterEnabled, textArea, textPosition, textOpacity, textColor, fontSize]);
 
   const startRecording = useCallback(async () => {
-    if (isRecording) return;
+    if (isRecording || isInitializing) return;
 
+    setIsInitializing(true);
+    
     try {
       // Get camera stream (always request best quality, we'll process it)
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -253,7 +256,14 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
       // Setup hidden camera video
       if (cameraVideoRef.current) {
         cameraVideoRef.current.srcObject = stream;
-        await cameraVideoRef.current.play();
+        try {
+          await cameraVideoRef.current.play();
+        } catch (err) {
+          console.warn('[Teleprompter] Camera video play interrupted, retrying...', err);
+          // Retry once after a small delay
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await cameraVideoRef.current.play();
+        }
       }
 
       // Setup canvas with correct dimensions
@@ -286,10 +296,25 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
 
         canvasStreamRef.current = canvasStream;
 
-        // Setup preview with canvas stream
+        // Setup preview with canvas stream - wait for stream to be ready
         if (previewVideoRef.current) {
+          // Clear any previous srcObject to avoid conflicts
+          if (previewVideoRef.current.srcObject) {
+            const oldStream = previewVideoRef.current.srcObject as MediaStream;
+            oldStream.getTracks().forEach(track => track.stop());
+          }
+          
           previewVideoRef.current.srcObject = canvasStream;
-          await previewVideoRef.current.play();
+          
+          // Wait for video to be ready before playing
+          try {
+            await previewVideoRef.current.play();
+          } catch (err) {
+            console.warn('[Teleprompter] Preview video play interrupted, retrying...', err);
+            // Retry once after a small delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+            await previewVideoRef.current.play();
+          }
         }
       }
       
@@ -324,12 +349,15 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
         updateAudioLevel();
       }
+      
+      setIsInitializing(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao acessar câmera/microfone";
       onError?.(errorMessage);
       console.error("Error starting recording:", error);
+      setIsInitializing(false);
     }
-  }, [aspectRatio, drawFrame, finalizeRecording, handleDataAvailable, isRecording, onCameraReady, onError, updateAudioLevel]);
+  }, [aspectRatio, drawFrame, finalizeRecording, handleDataAvailable, isRecording, isInitializing, onCameraReady, onError, updateAudioLevel]);
 
   const stopRecording = useCallback(() => {
     if (!isRecording) return;
@@ -386,11 +414,11 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={startRecording}
-            disabled={isRecording}
+            disabled={isRecording || isInitializing}
             className="flex-1 md:flex-none px-4 py-2 rounded bg-red-600 text-white disabled:opacity-50 hover:bg-red-700 transition-colors flex items-center justify-center gap-2 min-h-[44px] touch-manipulation"
           >
             <span className={isRecording ? "hidden" : "inline-block w-3 h-3 rounded-full bg-white"}></span>
-            {isRecording ? "Gravando..." : "Iniciar"}
+            {isInitializing ? "Iniciando..." : isRecording ? "Gravando..." : "Iniciar"}
           </button>
           <button
             onClick={stopRecording}
