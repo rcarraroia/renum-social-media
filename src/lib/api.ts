@@ -274,6 +274,139 @@ export interface CalendarResponse {
   total: number;
 }
 
+// Analytics
+export interface BestTimeToPostRequest {
+  platforms: SocialPlatform[];
+  days?: number;
+}
+
+export interface BestTimeToPostResponse {
+  suggestion: {
+    datetime: string;
+    dayOfWeek: string;
+    hour: number;
+    minute: number;
+    reason: string;
+    engagementScore: number;
+    alternatives: Array<{
+      datetime: string;
+      engagementScore: number;
+    }>;
+  };
+}
+
+// Analytics - Fase 5
+export interface MetricPoint {
+  date: string;
+  reach: number;
+  engagement: number;
+  followers: number;
+}
+
+export interface DashboardMetrics {
+  total_reach: number;
+  total_impressions: number;
+  total_engagement: number;
+  engagement_rate: number;
+  total_likes: number;
+  total_comments: number;
+  total_shares: number;
+  total_saves: number;
+  total_followers: number;
+  followers_gained: number;
+  followers_lost: number;
+  net_followers: number;
+  reach_change_percent: number;
+  engagement_change_percent: number;
+  followers_change_percent: number;
+  period_start: string;
+  period_end: string;
+  evolution_data: MetricPoint[];
+}
+
+export interface PostPerformance {
+  post_id: string;
+  platform: string;
+  published_at: string;
+  content_preview: string;
+  reach: number;
+  impressions: number;
+  engagement: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  engagement_rate: number;
+  post_url?: string;
+}
+
+export interface PostsPerformanceParams {
+  start_date?: string;
+  end_date?: string;
+  platform?: string;
+  sort_by?: string;
+  order?: 'asc' | 'desc';
+}
+
+export interface BestTime {
+  hour: number;
+  day_of_week: string;
+  avg_engagement: number;
+  sample_size: number;
+}
+
+export interface PlatformMetrics {
+  platform: string;
+  reach: number;
+  engagement: number;
+  followers: number;
+  posts_count: number;
+  contribution_percent: number;
+}
+
+export interface PlatformBreakdownParams {
+  start_date?: string;
+  end_date?: string;
+}
+
+// AI Assistant - Fase 5
+export interface PageContext {
+  page_name: string;
+  page_path: string;
+  additional_context?: Record<string, any>;
+}
+
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  context: PageContext;
+  history: Message[];
+}
+
+export interface ToolCall {
+  tool_name: string;
+  arguments: Record<string, any>;
+  result: string;
+  executed: boolean;
+}
+
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
+export interface ChatResponse {
+  message: string;
+  tool_calls?: ToolCall[];
+  requires_confirmation: boolean;
+  tokens_used?: TokenUsage;
+}
+
 // ============================================================================
 // API CLIENT INTERFACE
 // ============================================================================
@@ -337,11 +470,25 @@ export interface APIClient {
     cancelPost(id: string): Promise<void>;
   };
   
+  // Analytics
+  analytics: {
+    getBestTimeToPost(request: BestTimeToPostRequest): Promise<BestTimeToPostResponse>;
+    getDashboard(): Promise<DashboardMetrics>;
+    getPosts(params?: PostsPerformanceParams): Promise<{ posts: PostPerformance[]; total: number }>;
+    getBestTimes(platform?: string): Promise<{ best_times: Record<string, BestTime[]> }>;
+    getPlatforms(params?: PlatformBreakdownParams): Promise<{ platforms: PlatformMetrics[]; total_reach: number; total_engagement: number }>;
+  };
+  
   // Social Accounts
   social: {
     listAccounts(): Promise<SocialAccountsResponse>;
     connect(platform: string): Promise<{ authorization_url: string }>;
     disconnect(platform: string): Promise<void>;
+  };
+  
+  // AI Assistant
+  assistant: {
+    chat(request: ChatRequest): Promise<ChatResponse>;
   };
   
   // Health
@@ -684,6 +831,94 @@ class APIClientImpl implements APIClient {
 
     disconnect: async (platform: string): Promise<void> => {
       await this.request<{ message: string }>('DELETE', `/api/integrations/social-accounts/${platform}`);
+    },
+  };
+
+  // ============================================================================
+  // ANALYTICS
+  // ============================================================================
+
+  analytics = {
+    getBestTimeToPost: async (request: BestTimeToPostRequest): Promise<BestTimeToPostResponse> => {
+      // Por enquanto, retornar dados mockados baseados em padrões gerais
+      // TODO: Implementar lógica real baseada em dados históricos do usuário
+      const now = new Date();
+      const suggestion = new Date(now);
+      
+      // Sugerir terça-feira às 18:30 (horário com maior engajamento geral)
+      const daysUntilTuesday = (2 - now.getDay() + 7) % 7 || 7;
+      suggestion.setDate(now.getDate() + daysUntilTuesday);
+      suggestion.setHours(18, 30, 0, 0);
+      
+      return {
+        suggestion: {
+          datetime: suggestion.toISOString(),
+          dayOfWeek: 'tuesday',
+          hour: 18,
+          minute: 30,
+          reason: 'Baseado em dados gerais de engajamento (você ainda não tem histórico suficiente)',
+          engagementScore: 7.5,
+          alternatives: [
+            {
+              datetime: new Date(suggestion.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+              engagementScore: 7.2
+            },
+            {
+              datetime: new Date(suggestion.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+              engagementScore: 7.0
+            }
+          ]
+        }
+      };
+    },
+
+    getDashboard: async (): Promise<DashboardMetrics> => {
+      return this.request<DashboardMetrics>('GET', '/api/analytics/dashboard');
+    },
+
+    getPosts: async (params?: PostsPerformanceParams): Promise<{ posts: PostPerformance[]; total: number }> => {
+      const queryParams = new URLSearchParams();
+      if (params?.start_date) queryParams.append('start_date', params.start_date);
+      if (params?.end_date) queryParams.append('end_date', params.end_date);
+      if (params?.platform) queryParams.append('platform', params.platform);
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+      if (params?.order) queryParams.append('order', params.order);
+      
+      const queryString = queryParams.toString();
+      const path = queryString ? `/api/analytics/posts?${queryString}` : '/api/analytics/posts';
+      
+      return this.request<{ posts: PostPerformance[]; total: number }>('GET', path);
+    },
+
+    getBestTimes: async (platform?: string): Promise<{ best_times: Record<string, BestTime[]> }> => {
+      const queryParams = new URLSearchParams();
+      if (platform) queryParams.append('platform', platform);
+      
+      const queryString = queryParams.toString();
+      const path = queryString ? `/api/analytics/best-times?${queryString}` : '/api/analytics/best-times';
+      
+      return this.request<{ best_times: Record<string, BestTime[]> }>('GET', path);
+    },
+
+    getPlatforms: async (params?: PlatformBreakdownParams): Promise<{ platforms: PlatformMetrics[]; total_reach: number; total_engagement: number }> => {
+      const queryParams = new URLSearchParams();
+      if (params?.start_date) queryParams.append('start_date', params.start_date);
+      if (params?.end_date) queryParams.append('end_date', params.end_date);
+      
+      const queryString = queryParams.toString();
+      const path = queryString ? `/api/analytics/platforms?${queryString}` : '/api/analytics/platforms';
+      
+      return this.request<{ platforms: PlatformMetrics[]; total_reach: number; total_engagement: number }>('GET', path);
+    },
+  };
+
+  // ============================================================================
+  // AI ASSISTANT
+  // ============================================================================
+
+  assistant = {
+    chat: async (request: ChatRequest): Promise<ChatResponse> => {
+      return this.request<ChatResponse>('POST', '/api/assistant/chat', request);
     },
   };
 

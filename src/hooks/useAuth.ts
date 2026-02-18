@@ -81,6 +81,8 @@ export function useAuth() {
     try {
       await authService.signOut();
       clearUser();
+      // Limpar histórico do AI Assistant
+      sessionStorage.removeItem('ai_assistant_history');
       showSuccess("Desconectado");
       navigate("/login");
     } finally {

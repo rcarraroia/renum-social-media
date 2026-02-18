@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import CreditsBadge from "@/components/modules/CreditsBadge";
+import VideoConfigStep from "@/components/modules/VideoConfigStep";
+import ScheduleStep from "@/components/modules/ScheduleStep";
 import { useAvatar } from "@/hooks/useAvatar";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import type { AspectRatio, Platform } from "@/lib/compatibility";
 
 const UpgradeRequired: React.FC<{ onUpgrade: () => void; onRefresh: () => void; onBack: () => void }> = ({ onUpgrade, onRefresh, onBack }) => {
   return (
@@ -46,6 +49,7 @@ const Module3Page: React.FC = () => {
     blocked_plan,
     blocked_heygen,
     input,
+    config,
     approval,
     generating,
     ready,
@@ -65,6 +69,10 @@ const Module3Page: React.FC = () => {
     progressStep,
     error,
     loading,
+    aspectRatio,
+    setAspectRatio,
+    selectedPlatforms,
+    setSelectedPlatforms,
     loadScriptFromState,
     generateVideo,
     cancelGeneration,
@@ -74,12 +82,15 @@ const Module3Page: React.FC = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [testStep, setTestStep] = useState(1);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   // For testing: override the hook's state with local test state
   const effectiveInput = testMode ? testStep === 1 : input;
-  const effectiveApproval = testMode ? testStep === 2 : approval;
-  const effectiveGenerating = testMode ? testStep === 3 : generating;
-  const effectiveReady = testMode ? testStep === 4 : ready;
+  const effectiveConfig = testMode ? testStep === 2 : config;
+  const effectiveApproval = testMode ? testStep === 3 : approval;
+  const effectiveGenerating = testMode ? testStep === 4 : generating;
+  const effectiveReady = testMode ? testStep === 5 : ready;
+  const effectiveSchedule = testMode ? testStep === 6 : (ready && showSchedule);
 
   // For testing: load sample script
   const loadSampleForTesting = () => {
@@ -94,9 +105,17 @@ const Module3Page: React.FC = () => {
     if (step >= 2) {
       loadSampleForTesting();
     }
-    if (step === 4) {
-      // Add test video URL for step 4
+    if (step >= 3) {
+      // Mock config for step 3+
+      setAspectRatio("9:16");
+      setSelectedPlatforms(["instagram", "tiktok"]);
+    }
+    if (step >= 5) {
+      // Add test video URL for step 5+
       (videoUrl as any) = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    }
+    if (step === 6) {
+      setShowSchedule(true);
     }
   };
 
@@ -143,6 +162,59 @@ const Module3Page: React.FC = () => {
     navigate("/module-2/post-rapido", {
       state: { videoUrl, scriptId: null, source: "heygen" },
     });
+  };
+
+  const handleSchedule = async (config: {
+    mode: "now" | "scheduled" | "ai";
+    scheduledAt?: string;
+    descriptions: Record<string, string>;
+  }) => {
+    if (!videoUrl || !user?.id) {
+      showError("Vídeo ou usuário não encontrado");
+      return;
+    }
+
+    const toastId = showLoading("Agendando posts...");
+
+    try {
+      // Criar posts para cada plataforma
+      const posts = selectedPlatforms.map((platform) => ({
+        user_id: user.id,
+        platform,
+        content: config.descriptions[platform] || script || "",
+        media_url: videoUrl,
+        media_type: "video" as const,
+        aspect_ratio: aspectRatio || "9:16",
+        status: config.mode === "now" ? ("published" as const) : ("scheduled" as const),
+        scheduled_at: config.scheduledAt || null,
+        metadata: {
+          source: "heygen",
+          script,
+          theme,
+          audience,
+        },
+      }));
+
+      const { error } = await supabase.from("posts").insert(posts);
+
+      if (error) throw error;
+
+      dismissToast(toastId);
+      showSuccess(
+        config.mode === "now"
+          ? "Posts publicados com sucesso!"
+          : "Posts agendados com sucesso!"
+      );
+
+      // Navegar para dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    } catch (err: any) {
+      dismissToast(toastId);
+      console.error("Erro ao agendar posts:", err);
+      showError("Erro ao agendar posts");
+    }
   };
 
   if (checking || loading) {
@@ -195,17 +267,21 @@ const Module3Page: React.FC = () => {
               <button onClick={() => enableTestMode(2)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 2">2</button>
               <button onClick={() => enableTestMode(3)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 3">3</button>
               <button onClick={() => enableTestMode(4)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 4">4</button>
+              <button onClick={() => enableTestMode(5)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 5">5</button>
+              <button onClick={() => enableTestMode(6)} className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200" title="Passo 6">6</button>
             </div>
             <CreditsBadge used={credits.used ?? 0} total={credits.total ?? 0} onClick={() => alert(`Créditos: ${(credits.total ?? 0) - (credits.used ?? 0)}/${credits.total ?? 0}`)} />
           </div>
         </div>
 
         {/* Stepper simplified */}
-        <div className="flex gap-2 items-center">
-          <button onClick={() => enableTestMode(1)} className={`px-3 py-1 rounded ${effectiveInput ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>1. Script</button>
-          <button onClick={() => enableTestMode(2)} className={`px-3 py-1 rounded ${effectiveApproval ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>2. Aprovação</button>
-          <button onClick={() => enableTestMode(3)} className={`px-3 py-1 rounded ${effectiveGenerating ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>3. Geração</button>
-          <button onClick={() => enableTestMode(4)} className={`px-3 py-1 rounded ${effectiveReady ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>4. Resultado</button>
+        <div className="flex gap-2 items-center overflow-x-auto pb-2">
+          <button onClick={() => enableTestMode(1)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveInput ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>1. Script</button>
+          <button onClick={() => enableTestMode(2)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveConfig ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>2. Configuração</button>
+          <button onClick={() => enableTestMode(3)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveApproval ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>3. Aprovação</button>
+          <button onClick={() => enableTestMode(4)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveGenerating ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>4. Geração</button>
+          <button onClick={() => enableTestMode(5)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveReady ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>5. Resultado</button>
+          <button onClick={() => enableTestMode(6)} className={`px-3 py-1 rounded whitespace-nowrap text-sm ${effectiveSchedule ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>6. Agendamento</button>
         </div>
 
         {/* Content depending on state (same UI as before) */}
@@ -250,12 +326,43 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
+        {effectiveConfig && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-lg font-semibold mb-4">PASSO 2: Configurar Vídeo</h3>
+            <VideoConfigStep
+              onComplete={(config) => {
+                setAspectRatio(config.aspectRatio);
+                setSelectedPlatforms(config.platforms);
+                // Avançar para aprovação (state será gerenciado pelo hook)
+                if (testMode) {
+                  setTestStep(3);
+                }
+              }}
+              onBack={() => {
+                if (testMode) {
+                  setTestStep(1);
+                }
+              }}
+              initialAspectRatio={aspectRatio || undefined}
+              initialPlatforms={selectedPlatforms}
+            />
+          </div>
+        )}
+
         {effectiveApproval && (
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold">PASSO 2: Revisar script</h3>
+                <h3 className="text-lg font-semibold">PASSO 3: Revisar script</h3>
                 <p className="text-sm text-slate-500 mt-1">Este script será lido pelo seu avatar digital. Frases curtas funcionam melhor.</p>
+                {aspectRatio && (
+                  <div className="mt-2 text-sm">
+                    <span className="text-slate-600">Proporção: </span>
+                    <span className="font-medium text-indigo-600">{aspectRatio}</span>
+                    <span className="text-slate-400 mx-2">•</span>
+                    <span className="text-slate-600">{selectedPlatforms.length} {selectedPlatforms.length === 1 ? "rede" : "redes"}</span>
+                  </div>
+                )}
               </div>
 
               <div className="text-sm text-slate-400">
@@ -304,7 +411,7 @@ const Module3Page: React.FC = () => {
 
         {effectiveGenerating && (
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <h3 className="text-lg font-semibold">PASSO 3: Gerando seu vídeo...</h3>
+            <h3 className="text-lg font-semibold">PASSO 4: Gerando seu vídeo...</h3>
             <p className="text-sm text-slate-500 mt-1">Geralmente leva 1-3 minutos. Você será notificado quando pronto.</p>
 
             <div className="mt-6 space-y-3 max-w-md mx-auto text-left">
@@ -320,9 +427,9 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {effectiveReady && videoUrl && (
+        {effectiveReady && videoUrl && !effectiveSchedule && (
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold">PASSO 4: Resultado</h3>
+            <h3 className="text-lg font-semibold">PASSO 5: Resultado</h3>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <video src={videoUrl} controls autoPlay muted className="w-full rounded" />
@@ -333,12 +440,33 @@ const Module3Page: React.FC = () => {
                 <div className="text-sm mt-2">Duração (est): {estimatedSeconds ?? Math.round((script?.split(/\s+/).length ?? 0) * 0.5)}s</div>
 
                 <div className="mt-4 flex flex-col gap-2">
-                  <button onClick={() => handleSendToPostRapido()} className="px-3 py-2 rounded bg-indigo-600 text-white">Enviar para PostRápido →</button>
-                  <a href={videoUrl} download className="px-3 py-2 rounded bg-gray-100 text-center">Download</a>
-                  <button onClick={() => reset()} className="px-3 py-2 rounded bg-white border">Gerar Novo</button>
+                  <button 
+                    onClick={() => setShowSchedule(true)} 
+                    className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    📅 Agendar Posts →
+                  </button>
+                  <button onClick={() => handleSendToPostRapido()} className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">Enviar para PostRápido</button>
+                  <a href={videoUrl} download className="px-3 py-2 rounded bg-gray-100 text-center hover:bg-gray-200">Download</a>
+                  <button onClick={() => reset()} className="px-3 py-2 rounded bg-white border hover:bg-gray-50">Gerar Novo</button>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {effectiveSchedule && videoUrl && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-lg font-semibold mb-4">PASSO 6: Agendar Posts</h3>
+            <ScheduleStep
+              platforms={selectedPlatforms}
+              descriptions={selectedPlatforms.reduce((acc, platform) => {
+                acc[platform] = script || "";
+                return acc;
+              }, {} as Record<string, string>)}
+              onSchedule={handleSchedule}
+              onBack={() => setShowSchedule(false)}
+            />
           </div>
         )}
 

@@ -1,92 +1,147 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
-import VideoUpload from "@/components/modules/VideoUpload";
+import PostConfigStep from "@/components/modules/PostConfigStep";
+import MediaUpload from "@/components/modules/MediaUpload";
 import VideoPreview from "@/components/modules/VideoPreview";
+import CarouselPreview from "@/components/modules/CarouselPreview";
 import DescriptionEditor from "@/components/modules/DescriptionEditor";
-import { useVideoUpload } from "../hooks/useVideoUpload";
+import ScheduleStep from "@/components/modules/ScheduleStep";
+import { useMediaUpload } from "../hooks/useMediaUpload";
 import { useAuth } from "@/hooks/useAuth";
+import type { PostType, AspectRatio, Platform } from "@/lib/compatibility";
 
 const Module2Page: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
-    videoId,
+    mediaId,
     uploadProgress,
     status,
     error,
-    videoData,
+    mediaData,
+    postType,
+    aspectRatio,
+    selectedPlatforms,
+    setPostType,
+    setAspectRatio,
+    setSelectedPlatforms,
     uploadVideo,
+    uploadImage,
+    uploadCarousel,
     saveDescriptions,
-    loadVideoData,
-  } = useVideoUpload();
+    schedulePosts,
+    reset,
+  } = useMediaUpload();
 
-  const [step, setStep] = React.useState<number>(1);
+  const [step, setStep] = React.useState<number>(0);
+  const [carouselFiles, setCarouselFiles] = React.useState<Array<{
+    file: File;
+    preview: string;
+    order: number;
+    altText?: string;
+  }>>([]);
 
-  // For testing: load sample video data
-  const loadSampleVideo = () => {
-    // Mock video data for testing
-    const mockVideoData = {
-      id: "test-video-123",
-      video_raw_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      video_processed_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      duration_seconds: 596,
-      descriptions: {
-        instagram: "🎬 Confira este vídeo incrível! #video #content",
-        tiktok: "🔥 Novo vídeo no ar! #viral #trending",
-        facebook: "Assista ao nosso novo vídeo e compartilhe com seus amigos!",
-      },
-    };
-    
-    // Simulate loaded video
-    (videoData as any) = mockVideoData;
-    setStep(2);
+  // Detectar se veio do teleprompter
+  React.useEffect(() => {
+    const state = location.state as any;
+    if (state?.fromTeleprompter && state?.videoId) {
+      // Configurar dados do teleprompter
+      setPostType("video");
+      if (state.aspectRatio) setAspectRatio(state.aspectRatio);
+      if (state.selectedPlatforms) setSelectedPlatforms(state.selectedPlatforms);
+      
+      // Pular para step 2 (preview) já que vídeo já existe
+      setStep(2);
+    }
+  }, [location.state, setPostType, setAspectRatio, setSelectedPlatforms]);
+
+  // Handlers para PostConfigStep
+  const handleConfigComplete = (config: {
+    postType: PostType;
+    aspectRatio?: AspectRatio;
+    platforms: Platform[];
+  }) => {
+    setPostType(config.postType);
+    if (config.aspectRatio) {
+      setAspectRatio(config.aspectRatio);
+    }
+    setSelectedPlatforms(config.platforms);
+    setStep(1);
   };
 
-  React.useEffect(() => {
-    // if there is already a videoId in query/local state we could load it
-    // for now, stay simple
-  }, []);
+  // Handlers para MediaUpload
+  const handleMediaSelected = async (files: File | File[]) => {
+    if (!postType) return;
 
-  const handleFileSelected = async (file: File) => {
-    await uploadVideo(file);
-    setStep(2);
+    if (postType === "video") {
+      await uploadVideo(files as File);
+      setStep(2); // Avançar para Preview
+    } else if (postType === "image") {
+      await uploadImage(files as File);
+      setStep(2); // Avançar para Preview
+    } else if (postType === "carousel") {
+      // Armazenar arquivos para preview/edição
+      const filesArray = Array.isArray(files) ? files : [files];
+      const mediaFiles = filesArray.map((file, index) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        order: index,
+        altText: "",
+      }));
+      setCarouselFiles(mediaFiles);
+      setStep(2); // Avançar para CarouselPreview
+    }
   };
 
   const handleCancelUpload = () => {
-    // For now, simply reset — more sophisticated cleanup can be added
-    window.location.reload();
+    if (confirm("Descartar upload e recomeçar?")) {
+      reset();
+      setStep(0);
+      setCarouselFiles([]);
+    }
   };
 
+  // Handlers para CarouselPreview
+  const handleCarouselConfirm = async (files: typeof carouselFiles) => {
+    await uploadCarousel(files);
+    setStep(3); // Avançar para DescriptionEditor
+  };
+
+  // Handlers para Preview
   const handleNextFromPreview = () => {
-    setStep(3);
+    setStep(3); // Avançar para DescriptionEditor
   };
 
-  const handleSaveDescriptions = async (descriptions: any) => {
+  // Handlers para DescriptionEditor
+  const handleSaveDescriptions = async (descriptions: Record<string, string>) => {
     const res = await saveDescriptions(descriptions);
-    if ((res as any)?.error) return;
-    // After saving, navigate to dashboard or calendar
+    if (res?.error) return;
+    setStep(4); // Avançar para ScheduleStep
+  };
+
+  // Handlers para ScheduleStep
+  const handleSchedule = async (config: any) => {
+    const res = await schedulePosts(config);
+    if (res?.error) return;
+    // Sucesso - navegar para dashboard
     navigate("/dashboard");
   };
 
-  // Build platforms list for DescriptionEditor:
-  // Prefer keys from videoData.descriptions if present, otherwise fallback to common platforms
-  const platformsFromData = React.useMemo(() => {
-    const keys = videoData?.descriptions ? Object.keys(videoData.descriptions) : [];
-    if (keys.length === 0) {
-      return [
-        { key: "instagram", label: "Instagram" },
-        { key: "tiktok", label: "TikTok" },
-        { key: "facebook", label: "Facebook" },
-      ];
+  // Build platforms list para DescriptionEditor
+  const platformsForEditor = React.useMemo(() => {
+    if (!selectedPlatforms || selectedPlatforms.length === 0) {
+      return [];
     }
-    return keys.map((k: string) => {
-      // human-friendly label
-      const label =
-        k === "x" ? "X" : k === "linkedin" ? "LinkedIn" : k.charAt(0).toUpperCase() + k.slice(1);
-      return { key: k, label };
-    });
-  }, [videoData]);
+    return selectedPlatforms.map((platform) => ({
+      key: platform,
+      label: platform === "x" ? "X" : platform.charAt(0).toUpperCase() + platform.slice(1),
+    }));
+  }, [selectedPlatforms]);
+
+  // Total de steps
+  const totalSteps = 5; // 0: Config, 1: Upload, 2: Preview, 3: Descrições, 4: Agendamento
 
   return (
     <MainLayout>
@@ -95,46 +150,79 @@ const Module2Page: React.FC = () => {
           <div>
             <Link to="/dashboard" className="text-sm text-slate-500 underline">← Voltar</Link>
             <h1 className="text-2xl font-bold mt-2">⚡ PostRápido</h1>
-            <p className="text-sm text-slate-500 mt-1">Upload, legendas e agendamento</p>
+            <p className="text-sm text-slate-500 mt-1">
+              {postType === "video" && "Vídeo"}
+              {postType === "image" && "Imagem"}
+              {postType === "carousel" && "Carrossel"}
+              {!postType && "Escolha o tipo de post"}
+              {aspectRatio && ` • ${aspectRatio}`}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={loadSampleVideo}
-              className="text-xs px-3 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-            >
-              🧪 Carregar Vídeo de Teste
-            </button>
-            <div className="text-sm text-slate-500">Passo {step} de 3</div>
-          </div>
+          <div className="text-sm text-slate-500">Passo {step + 1} de {totalSteps}</div>
         </div>
 
         {/* Stepper */}
         <div className="flex gap-2 items-center overflow-x-auto pb-2">
           <button 
-            onClick={() => setStep(1)}
-            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+            onClick={() => setStep(0)}
+            disabled={step > 0}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${
+              step === 0 ? "bg-indigo-600 text-white" : step > 0 ? "bg-green-100 text-green-700" : "bg-gray-100"
+            }`}
           >
-            1. Upload
+            {step > 0 ? "✓" : "0."} Configuração
           </button>
           <button 
-            onClick={() => setStep(2)}
-            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+            onClick={() => postType && setStep(1)}
+            disabled={!postType || step > 1}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${
+              step === 1 ? "bg-indigo-600 text-white" : step > 1 ? "bg-green-100 text-green-700" : "bg-gray-100"
+            }`}
           >
-            2. Preview
+            {step > 1 ? "✓" : "1."} Upload
           </button>
           <button 
-            onClick={() => setStep(3)}
-            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+            onClick={() => mediaData && setStep(2)}
+            disabled={!mediaData || step > 2}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${
+              step === 2 ? "bg-indigo-600 text-white" : step > 2 ? "bg-green-100 text-green-700" : "bg-gray-100"
+            }`}
           >
-            3. Edição
+            {step > 2 ? "✓" : "2."} Preview
+          </button>
+          <button 
+            onClick={() => mediaData && setStep(3)}
+            disabled={!mediaData || step > 3}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${
+              step === 3 ? "bg-indigo-600 text-white" : step > 3 ? "bg-green-100 text-green-700" : "bg-gray-100"
+            }`}
+          >
+            {step > 3 ? "✓" : "3."} Descrições
+          </button>
+          <button 
+            onClick={() => mediaData?.descriptions && setStep(4)}
+            disabled={!mediaData?.descriptions}
+            className={`px-3 py-1 rounded whitespace-nowrap text-sm ${
+              step === 4 ? "bg-indigo-600 text-white" : "bg-gray-100"
+            }`}
+          >
+            4. Agendamento
           </button>
         </div>
 
         {/* Content */}
         <div>
-          {step === 1 && (
-            <VideoUpload
-              onFileSelected={handleFileSelected}
+          {step === 0 && (
+            <PostConfigStep
+              onComplete={handleConfigComplete}
+            />
+          )}
+
+          {step === 1 && postType && (
+            <MediaUpload
+              postType={postType}
+              aspectRatio={aspectRatio}
+              onFilesSelected={handleMediaSelected}
               status={status}
               progress={uploadProgress}
               onCancel={handleCancelUpload}
@@ -142,30 +230,44 @@ const Module2Page: React.FC = () => {
             />
           )}
 
-          {step === 2 && (
+          {step === 2 && postType === "carousel" && carouselFiles.length > 0 && (
+            <CarouselPreview
+              images={carouselFiles}
+              onConfirm={handleCarouselConfirm}
+              onBack={() => setStep(1)}
+            />
+          )}
+
+          {step === 2 && postType !== "carousel" && mediaData && (
             <VideoPreview
-              processedUrl={videoData?.video_processed_url ?? videoData?.video_raw_url ?? null}
-              duration={videoData?.duration_seconds ? `${Math.floor((videoData.duration_seconds ?? 0) / 60)}:${((videoData.duration_seconds ?? 0) % 60).toString().padStart(2, "0")}` : undefined}
+              processedUrl={mediaData.url ?? null}
+              duration={mediaData.durationSeconds ? `${Math.floor(mediaData.durationSeconds / 60)}:${(mediaData.durationSeconds % 60).toString().padStart(2, "0")}` : undefined}
               size={undefined}
               onNewUpload={() => {
                 if (confirm("Fazer novo upload descartará o atual. Continuar?")) {
-                  setStep(1);
+                  reset();
+                  setStep(0);
                 }
               }}
               onNext={handleNextFromPreview}
             />
           )}
 
-          {step === 3 && (
+          {step === 3 && mediaData && (
             <DescriptionEditor
-              platforms={platformsFromData}
-              initial={videoData?.descriptions ?? {
-                instagram: videoData?.descriptions?.instagram ?? "",
-                tiktok: videoData?.descriptions?.tiktok ?? "",
-                facebook: videoData?.descriptions?.facebook ?? "",
-              }}
+              platforms={platformsForEditor}
+              initial={mediaData.descriptions ?? {}}
               onSave={handleSaveDescriptions}
               onBack={() => setStep(2)}
+            />
+          )}
+
+          {step === 4 && mediaData?.descriptions && (
+            <ScheduleStep
+              platforms={selectedPlatforms}
+              descriptions={mediaData.descriptions}
+              onSchedule={handleSchedule}
+              onBack={() => setStep(3)}
             />
           )}
         </div>

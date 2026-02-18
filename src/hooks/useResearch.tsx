@@ -3,6 +3,7 @@ import { createResearchVideo, saveGeneratedScript } from "../services/research";
 import { useAuthStore } from "../stores/authStore";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 import { api } from "@/lib/api";
+import type { AspectRatio, Platform } from "@/lib/compatibility";
 
 type Status = "idle" | "searching" | "generating" | "ready" | "error";
 
@@ -28,6 +29,9 @@ export function useResearch() {
   const [sources, setSources] = React.useState<any[]>([]);
   const [status, setStatus] = React.useState<Status>("idle");
   const [error, setError] = React.useState<string | null>(null);
+
+  const [aspectRatio, setAspectRatio] = React.useState<AspectRatio | null>(null);
+  const [selectedPlatforms, setSelectedPlatforms] = React.useState<Platform[]>([]);
 
   const [drafts, setDrafts] = React.useState<Draft[]>([]);
   const [loadingDrafts, setLoadingDrafts] = React.useState<boolean>(false);
@@ -119,7 +123,7 @@ export function useResearch() {
       showError("Script vazio — não é possível aprovar");
       return;
     }
-    // Move to journey selection step
+    // Move to config step (step 3) instead of journey (step 4)
     setStep(3);
   }, [script]);
 
@@ -215,6 +219,12 @@ export function useResearch() {
     sources,
     status,
     error,
+
+    // config
+    aspectRatio,
+    setAspectRatio,
+    selectedPlatforms,
+    setSelectedPlatforms,
 
     // actions
     createScript,

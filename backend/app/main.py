@@ -14,7 +14,9 @@ from app.api.routes import (
     social_accounts,
     calendar,
     dashboard,
-    leads
+    leads,
+    analytics,
+    assistant
 )
 
 logger = setup_logger()
@@ -51,6 +53,8 @@ app.include_router(integrations.router, prefix="/integrations", tags=["Integrati
 app.include_router(social_accounts.router, tags=["Integrations"])
 app.include_router(calendar.router, tags=["Calendar"])
 app.include_router(dashboard.router, tags=["Dashboard"])
+app.include_router(analytics.router, tags=["Analytics"])
+app.include_router(assistant.router, tags=["AI Assistant"])
 app.include_router(leads.router, prefix="/api", tags=["Leads"])
 app.include_router(module1.router, prefix="/api/modules/1", tags=["Module 1 - ScriptAI"])
 app.include_router(module2.router, prefix="/api/modules/2", tags=["Module 2 - PostRápido"])

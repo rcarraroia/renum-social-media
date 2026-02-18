@@ -4,6 +4,7 @@ import { supabase } from "../integrations/supabase/client";
 import { showLoading, dismissToast, showSuccess, showError } from "../utils/toast";
 import { saveGeneratedVideo, incrementCreditsUsed } from "@/services/avatar";
 import { api } from "@/lib/api";
+import type { AspectRatio, Platform } from "@/lib/compatibility";
 
 /**
  * States:
@@ -23,6 +24,7 @@ export type AvatarState =
   | "blocked_plan"
   | "blocked_heygen"
   | "input"
+  | "config"      // ← NOVO: Configuração de vídeo
   | "approval"
   | "generating"
   | "ready"
@@ -53,6 +55,10 @@ export function useAvatar(initialVideoId?: string | null) {
   const [progressStep, setProgressStep] = React.useState<number>(0); // 0-4
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
+
+  // Configuração de vídeo (proporção e plataformas) - NOVO
+  const [aspectRatio, setAspectRatio] = React.useState<AspectRatio | null>(null);
+  const [selectedPlatforms, setSelectedPlatforms] = React.useState<Platform[]>([]);
 
   // Helper to calculate words/duration
   const countWords = (t: string) => (t ? t.trim().split(/\s+/).length : 0);
@@ -139,9 +145,19 @@ export function useAvatar(initialVideoId?: string | null) {
         } else if (!cfg.apiKey || !cfg.avatarId || !cfg.voiceId) {
           if (mounted) setState("blocked_heygen");
         } else {
-          // ready to proceed; if a script was imported, jump to approval; else input
+          // ready to proceed; if a script was imported, jump to config; else input
           if (sstate?.script) {
-            if (mounted) setState("approval");
+            // Se vier com config do Module1, pular para approval
+            if (sstate?.aspectRatio && sstate?.platforms) {
+              if (mounted) {
+                setAspectRatio(sstate.aspectRatio);
+                setSelectedPlatforms(sstate.platforms);
+                setState("approval");
+              }
+            } else {
+              // Sem config, ir para config step
+              if (mounted) setState("config");
+            }
           } else {
             if (mounted) setState("input");
           }
@@ -175,6 +191,12 @@ export function useAvatar(initialVideoId?: string | null) {
       return { error: "no_credits" };
     }
 
+    // Validar se tem aspectRatio configurado
+    if (!aspectRatio) {
+      showError("Configure a proporção do vídeo antes de gerar");
+      return { error: "missing_config" };
+    }
+
     setState("generating");
     setError(null);
     setProgressStep(1);
@@ -182,12 +204,33 @@ export function useAvatar(initialVideoId?: string | null) {
     try {
       const toastId = showLoading("Iniciando geração com HeyGen...");
       
-      // 1. Chamar API para gerar vídeo
+      // Mapear aspect_ratio e dimension para HeyGen
+      const aspectRatioMap = {
+        '9:16': { 
+          aspect_ratio: '9:16', 
+          dimension: { width: 1080, height: 1920 } 
+        },
+        '1:1': { 
+          aspect_ratio: '1:1', 
+          dimension: { width: 1080, height: 1080 } 
+        },
+        '16:9': { 
+          aspect_ratio: '16:9', 
+          dimension: { width: 1920, height: 1080 } 
+        }
+      };
+
+      const videoConfig = aspectRatioMap[aspectRatio];
+      
+      // 1. Chamar API para gerar vídeo COM aspect_ratio
+      // TODO: Adicionar aspect_ratio e dimension quando backend suportar
       const response = await api.avatarai.generateVideo({
         script,
         avatarId: heygenConfig?.avatarId ?? "",
         voiceId: heygenConfig?.voiceId ?? "",
         title: theme || "Vídeo gerado com AvatarAI",
+        // aspectRatio: videoConfig.aspect_ratio,
+        // dimension: videoConfig.dimension,
       });
       
       setJobId(response.jobId);
@@ -264,7 +307,7 @@ export function useAvatar(initialVideoId?: string | null) {
       return { error: err };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [script, theme, credits, heygenConfig]);
+  }, [script, theme, credits, heygenConfig, aspectRatio]);
 
   const cancelGeneration = React.useCallback(async () => {
     // For mock: just reset
@@ -278,14 +321,35 @@ export function useAvatar(initialVideoId?: string | null) {
   }, []);
 
   // Expose a helper to import script (used when navigating with Router state)
-  const loadScriptFromState = React.useCallback((s: { script?: string; theme?: string; audience?: string; estimated_seconds?: number } | null) => {
+  const loadScriptFromState = React.useCallback((s: { 
+    script?: string; 
+    theme?: string; 
+    audience?: string; 
+    estimated_seconds?: number;
+    aspectRatio?: AspectRatio;
+    selectedPlatforms?: Platform[];
+  } | null) => {
     if (!s) return;
     if (s.script) {
       setScript(s.script);
       setTheme(s.theme ?? "");
       setAudience(s.audience ?? "");
       setEstimatedSeconds(s.estimated_seconds ?? estimateSecondsFromText(s.script));
-      setState("approval");
+      
+      // Load config from Module1 if available
+      if (s.aspectRatio) {
+        setAspectRatio(s.aspectRatio);
+      }
+      if (s.selectedPlatforms && s.selectedPlatforms.length > 0) {
+        setSelectedPlatforms(s.selectedPlatforms);
+      }
+      
+      // If config is provided, skip config step and go to approval
+      if (s.aspectRatio && s.selectedPlatforms && s.selectedPlatforms.length > 0) {
+        setState("approval");
+      } else {
+        setState("config");
+      }
     }
   }, []);
 
@@ -299,6 +363,8 @@ export function useAvatar(initialVideoId?: string | null) {
     setJobId(null);
     setProgressStep(0);
     setError(null);
+    setAspectRatio(null);
+    setSelectedPlatforms([]);
     setState("input");
   }, []);
 
@@ -308,6 +374,7 @@ export function useAvatar(initialVideoId?: string | null) {
     blocked_plan: state === "blocked_plan",
     blocked_heygen: state === "blocked_heygen",
     input: state === "input",
+    config: state === "config",        // ← NOVO
     approval: state === "approval",
     generating: state === "generating",
     ready: state === "ready",
@@ -331,6 +398,12 @@ export function useAvatar(initialVideoId?: string | null) {
     progressStep,
     error,
     loading,
+
+    // Configuração de vídeo - NOVO
+    aspectRatio,
+    setAspectRatio,
+    selectedPlatforms,
+    setSelectedPlatforms,
 
     loadScriptFromState,
     generateVideo,
