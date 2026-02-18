@@ -283,23 +283,32 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         console.log(`[Teleprompter] Canvas configurado: ${canvas.width}x${canvas.height} (${aspectRatio})`);
 
         // Start drawing frames
+        console.log('[Teleprompter] Iniciando drawFrame...');
         drawFrame();
 
         // Capture canvas stream
+        console.log('[Teleprompter] Capturando canvas stream...');
         const canvasStream = canvas.captureStream(30); // 30 FPS
+        console.log('[Teleprompter] Canvas stream capturado:', canvasStream);
         
         // Add audio from camera stream
         const audioTrack = stream.getAudioTracks()[0];
         if (audioTrack) {
+          console.log('[Teleprompter] Adicionando áudio ao canvas stream...');
           canvasStream.addTrack(audioTrack);
+        } else {
+          console.warn('[Teleprompter] Nenhuma faixa de áudio encontrada!');
         }
 
         canvasStreamRef.current = canvasStream;
+        console.log('[Teleprompter] Canvas stream salvo em ref');
 
         // Setup preview with canvas stream - wait for stream to be ready
         if (previewVideoRef.current) {
+          console.log('[Teleprompter] Configurando preview video...');
           // Clear any previous srcObject to avoid conflicts
           if (previewVideoRef.current.srcObject) {
+            console.log('[Teleprompter] Limpando stream anterior do preview...');
             const oldStream = previewVideoRef.current.srcObject as MediaStream;
             oldStream.getTracks().forEach(track => track.stop());
           }
@@ -308,37 +317,58 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
           
           // Wait for video to be ready before playing
           try {
+            console.log('[Teleprompter] Tentando iniciar preview video...');
             await previewVideoRef.current.play();
+            console.log('[Teleprompter] Preview video iniciado com sucesso!');
           } catch (err) {
             console.warn('[Teleprompter] Preview video play interrupted, retrying...', err);
             // Retry once after a small delay
             await new Promise(resolve => setTimeout(resolve, 100));
             await previewVideoRef.current.play();
+            console.log('[Teleprompter] Preview video iniciado após retry!');
           }
+        } else {
+          console.error('[Teleprompter] previewVideoRef.current é null!');
         }
+      } else {
+        console.error('[Teleprompter] Canvas ref é null!');
       }
       
+      console.log('[Teleprompter] Definindo cameraReady = true');
       setCameraReady(true);
       onCameraReady?.(stream);
 
       // Start recording canvas stream
+      console.log('[Teleprompter] Iniciando gravação...');
       const canvasStream = canvasStreamRef.current;
+      console.log('[Teleprompter] Canvas stream da ref:', canvasStream);
+      
       if (canvasStream) {
+        console.log('[Teleprompter] Criando MediaRecorder...');
         const recorder = new MediaRecorder(canvasStream);
+        console.log('[Teleprompter] MediaRecorder criado:', recorder);
+        
         recorder.ondataavailable = handleDataAvailable;
         recorder.onstop = finalizeRecording;
+        
+        console.log('[Teleprompter] Iniciando recorder.start()...');
         recorder.start();
+        console.log('[Teleprompter] Recorder iniciado! State:', recorder.state);
+        
         mediaRecorderRef.current = recorder;
         chunksRef.current = [];
         setIsRecording(true);
         setRecordingTime(0);
+        console.log('[Teleprompter] isRecording definido como true');
 
         // Start timer
         timerIntervalRef.current = setInterval(() => {
           setRecordingTime((prev) => prev + 1);
         }, 1000);
+        console.log('[Teleprompter] Timer iniciado');
 
         // Setup audio level monitoring
+        console.log('[Teleprompter] Configurando monitoramento de áudio...');
         const audioContext = new AudioContext();
         audioContextRef.current = audioContext;
         const source = audioContext.createMediaStreamSource(stream);
@@ -348,11 +378,17 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         analyserRef.current = analyser;
         dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
         updateAudioLevel();
+        console.log('[Teleprompter] Monitoramento de áudio configurado');
+      } else {
+        console.error('[Teleprompter] canvasStream é null! Não foi possível iniciar gravação.');
       }
       
+      console.log('[Teleprompter] Definindo isInitializing = false');
       setIsInitializing(false);
+      console.log('[Teleprompter] startRecording concluído com sucesso!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao acessar câmera/microfone";
+      console.error('[Teleprompter] Erro em startRecording:', error);
       onError?.(errorMessage);
       console.error("Error starting recording:", error);
       setIsInitializing(false);
