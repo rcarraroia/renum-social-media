@@ -50,6 +50,21 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   const [recordTextInVideo, setRecordTextInVideo] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
+  // Debug: Monitor cameraReady changes
+  useEffect(() => {
+    console.log('[DEBUG] cameraReady mudou para:', cameraReady);
+  }, [cameraReady]);
+
+  // Debug: Monitor isRecording changes
+  useEffect(() => {
+    console.log('[DEBUG] isRecording mudou para:', isRecording);
+  }, [isRecording]);
+
+  // Debug: Monitor isInitializing changes
+  useEffect(() => {
+    console.log('[DEBUG] isInitializing mudou para:', isInitializing);
+  }, [isInitializing]);
+
   // Refs para vídeo, canvas e preview
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -236,8 +251,14 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   }, [cameraReady, recordTextInVideo, script, teleprompterEnabled, textArea, textPosition, textOpacity, textColor, fontSize]);
 
   const startRecording = useCallback(async () => {
-    if (isRecording || isInitializing) return;
+    console.log('[Teleprompter] startRecording chamado. isRecording:', isRecording, 'isInitializing:', isInitializing);
+    
+    if (isRecording || isInitializing) {
+      console.log('[Teleprompter] Bloqueado: já está gravando ou inicializando');
+      return;
+    }
 
+    console.log('[Teleprompter] Iniciando processo de gravação...');
     setIsInitializing(true);
     
     try {
