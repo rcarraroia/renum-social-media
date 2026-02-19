@@ -1,6 +1,7 @@
 # ============================================
 # STAGE 1: Builder
 # ============================================
+# Cache bust: 2026-02-19-23:58
 FROM python:3.11-slim AS builder
 
 # Install build dependencies
@@ -24,7 +25,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ============================================
 # STAGE 2: Runtime
 # ============================================
-# Cache bust: 2026-02-19-23:45
+# Cache bust: 2026-02-19-23:58
 FROM python:3.11-slim
 
 # Set environment variables
