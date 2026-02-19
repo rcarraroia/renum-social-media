@@ -28,8 +28,7 @@ dist-ssr
 .env.local
 .env.production
 
-# Backend (não enviar para Vercel)
-backend/
+# Python
 .venv/
 __pycache__/
 *.pyc
