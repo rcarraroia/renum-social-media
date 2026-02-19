@@ -7,6 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
+      # Python Path
+      - PYTHONPATH=/app
+      
       # Supabase
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
@@ -90,6 +93,8 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
     environment:
+      # Python Path
+      - PYTHONPATH=/app
       # Supabase
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
@@ -144,6 +149,8 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.celery_app beat --loglevel=info
     environment:
+      # Python Path
+      - PYTHONPATH=/app
       # Supabase
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
