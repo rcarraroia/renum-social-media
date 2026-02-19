@@ -169,10 +169,22 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
     const canvas = canvasRef.current;
     const video = cameraVideoRef.current;
     
-    if (!canvas || !video || !cameraReady) return;
+    if (!canvas || !video || !cameraReady) {
+      console.warn('[Teleprompter drawFrame] Bloqueado:', { 
+        hasCanvas: !!canvas, 
+        hasVideo: !!video, 
+        cameraReady,
+        videoWidth: video?.videoWidth,
+        videoHeight: video?.videoHeight
+      });
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.error('[Teleprompter drawFrame] Não foi possível obter contexto 2d do canvas');
+      return;
+    }
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -278,14 +290,22 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
       if (cameraVideoRef.current) {
         cameraVideoRef.current.srcObject = stream;
         try {
+          console.log('[Teleprompter] Iniciando camera video...');
           await cameraVideoRef.current.play();
+          console.log('[Teleprompter] Camera video iniciado com sucesso!');
         } catch (err) {
           console.warn('[Teleprompter] Camera video play interrupted, retrying...', err);
           // Retry once after a small delay
           await new Promise(resolve => setTimeout(resolve, 100));
           await cameraVideoRef.current.play();
+          console.log('[Teleprompter] Camera video iniciado após retry!');
         }
       }
+
+      // IMPORTANTE: Definir cameraReady ANTES de iniciar drawFrame
+      console.log('[Teleprompter] Definindo cameraReady = true ANTES de drawFrame');
+      setCameraReady(true);
+      onCameraReady?.(stream);
 
       // Setup canvas with correct dimensions
       const canvas = canvasRef.current;
@@ -303,7 +323,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
 
         console.log(`[Teleprompter] Canvas configurado: ${canvas.width}x${canvas.height} (${aspectRatio})`);
 
-        // Start drawing frames
+        // Start drawing frames - AGORA cameraReady já é TRUE
         console.log('[Teleprompter] Iniciando drawFrame...');
         drawFrame();
 
@@ -360,9 +380,8 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         console.error('[Teleprompter] Canvas ref é null!');
       }
       
-      console.log('[Teleprompter] Definindo cameraReady = true');
-      setCameraReady(true);
-      onCameraReady?.(stream);
+      // cameraReady já foi definido ANTES de drawFrame
+      // Removido: setCameraReady(true) e onCameraReady?.(stream)
 
       // Start recording canvas stream
       console.log('[Teleprompter] Iniciando gravação...');
