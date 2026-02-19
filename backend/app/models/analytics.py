@@ -10,7 +10,7 @@ Este módulo define os schemas de dados para:
 Validates: Requirements 2.1-2.5, 3.1-3.6, 4.1-4.5, 5.1-5.5, 14.6
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 
@@ -248,7 +248,7 @@ class BestTimesResponse(BaseModel):
     
     Validates: Requirements 4.4, 4.5
     """
-    best_times: dict[str, List[BestTimeModel]] = Field(
+    best_times: Dict[str, List[BestTimeModel]] = Field(
         default_factory=dict,
         description="Melhores horários agrupados por plataforma"
     )
