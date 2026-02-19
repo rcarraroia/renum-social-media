@@ -23,9 +23,10 @@ class MetricPointModel(BaseModel):
     
     Validates: Requirement 2.4
     """
-    date: date = Field(
+    metric_date: date = Field(
         ...,
-        description="Data do ponto de métrica"
+        description="Data do ponto de métrica",
+        alias="date"
     )
     reach: int = Field(
         ...,
