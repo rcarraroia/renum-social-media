@@ -63,7 +63,7 @@ export function useTeleprompter() {
           script: metadata.script,
           video_raw_url: publicUrl,
           status: "ready",
-          module_type: "teleprompter",
+          module_type: "research", // Teleprompter faz parte do módulo research (ScriptAI)
           recording_source: "teleprompter",
           audience: metadata.audience,
           duration_seconds: metadata.durationSeconds,
@@ -72,6 +72,7 @@ export function useTeleprompter() {
             aspectRatio: metadata.aspectRatio,
             selectedPlatforms: metadata.selectedPlatforms,
             recordedAt: new Date().toISOString(),
+            recordingMethod: "teleprompter", // Identificador específico
           },
         });
 

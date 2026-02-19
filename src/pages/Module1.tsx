@@ -364,6 +364,7 @@ const Module1Page: React.FC = () => {
                       scrollPosition={scrollPosition}
                       teleprompterEnabled={teleprompterEnabled}
                       onToggleTeleprompter={() => setTeleprompterEnabled(!teleprompterEnabled)}
+                      onStartScroll={() => setIsScrolling(true)}
                       onRecordingComplete={(blob) => {
                         setRecordedVideo(blob);
                         showSuccess("Vídeo gravado com sucesso!");
