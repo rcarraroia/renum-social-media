@@ -204,17 +204,18 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
       canvas.dataset.drawing = 'true';
     }
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas with black background
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate dimensions for cropping/fitting
+    // Calculate dimensions for fitting (contain ao invés de cover para evitar zoom)
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
-    // Calculate scale to cover the canvas
-    const scale = Math.max(canvasWidth / videoWidth, canvasHeight / videoHeight);
+    // Calculate scale to FIT (contain) the canvas - evita zoom excessivo
+    const scale = Math.min(canvasWidth / videoWidth, canvasHeight / videoHeight);
     const scaledWidth = videoWidth * scale;
     const scaledHeight = videoHeight * scale;
 
@@ -326,29 +327,29 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
       setCameraReady(true);
       onCameraReady?.(stream);
 
-      // Setup canvas with correct dimensions
+      // Setup canvas with correct dimensions (usando 720p para melhor performance)
       const canvas = canvasRef.current;
       if (canvas) {
         if (aspectRatio === "9:16") {
-          canvas.width = 1080;
-          canvas.height = 1920;
+          canvas.width = 720;  // Reduzido de 1080
+          canvas.height = 1280; // Reduzido de 1920
         } else if (aspectRatio === "1:1") {
-          canvas.width = 1080;
-          canvas.height = 1080;
+          canvas.width = 720;  // Reduzido de 1080
+          canvas.height = 720; // Reduzido de 1080
         } else {
-          canvas.width = 1920;
-          canvas.height = 1080;
+          canvas.width = 1280; // Reduzido de 1920
+          canvas.height = 720; // Reduzido de 1080
         }
 
-        console.log(`[Teleprompter] Canvas configurado: ${canvas.width}x${canvas.height} (${aspectRatio})`);
+        console.log(`[Teleprompter] Canvas configurado: ${canvas.width}x${canvas.height} (${aspectRatio}) - 720p para melhor performance`);
 
         // Start drawing frames - AGORA cameraReady já é TRUE
         console.log('[Teleprompter] Iniciando drawFrame...');
         drawFrame();
 
-        // Capture canvas stream
+        // Capture canvas stream (reduzido para 24 FPS para melhor performance)
         console.log('[Teleprompter] Capturando canvas stream...');
-        const canvasStream = canvas.captureStream(30); // 30 FPS
+        const canvasStream = canvas.captureStream(24); // Reduzido de 30 FPS
         console.log('[Teleprompter] Canvas stream capturado:', canvasStream);
         
         // Add audio from camera stream
