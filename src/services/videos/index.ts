@@ -95,3 +95,43 @@ export async function updateVideoDescriptions(videoId: string, descriptions: Rec
 
   return { data: res?.data ?? null, error: res?.error ?? null };
 }
+
+/**
+ * List all videos for an organization
+ */
+export async function listVideos(organizationId: string, filters?: { status?: string; module_type?: string }): Promise<{ data: any[]; error: any }> {
+  let query = sb
+    .from("videos")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+
+  if (filters?.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters?.module_type) {
+    query = query.eq("module_type", filters.module_type);
+  }
+
+  const res: any = await query;
+
+  return { data: res?.data ?? [], error: res?.error ?? null };
+}
+
+/**
+ * Delete video record and storage file
+ */
+export async function deleteVideo(videoId: string, organizationId: string): Promise<{ data: any; error: any }> {
+  // First, try to delete from storage
+  const filePath = `${organizationId}/${videoId}/raw.webm`;
+  await sb.storage.from("videos-raw").remove([filePath]);
+
+  // Then delete the record
+  const res: any = await sb
+    .from("videos")
+    .delete()
+    .eq("id", videoId);
+
+  return { data: res?.data ?? null, error: res?.error ?? null };
+}

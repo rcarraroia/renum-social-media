@@ -17,6 +17,7 @@ import Analytics from "@/pages/Analytics";
 import Module1 from "./pages/Module1";
 import Module3 from "./pages/Module3";
 import PostsFlowsLanding from "./pages/PostsFlowsLanding";
+import MyVideos from "./pages/MyVideos";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,16 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Analytics />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* My Videos */}
+          <Route
+            path="/my-videos"
+            element={
+              <ProtectedRoute>
+                <MyVideos />
               </ProtectedRoute>
             }
           />

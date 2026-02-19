@@ -245,6 +245,12 @@ const Module1Page: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button 
+              onClick={() => navigate("/my-videos")}
+              className="text-xs px-3 py-1 rounded bg-indigo-100 text-indigo-800 hover:bg-indigo-200 flex items-center gap-1"
+            >
+              🎬 Meus Vídeos
+            </button>
+            <button 
               onClick={loadSampleScript}
               className="text-xs px-3 py-1 rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
             >
