@@ -77,6 +77,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const scriptContainerRef = useRef<HTMLDivElement | null>(null);
+  const cameraReadyRef = useRef<boolean>(false);
 
   // Audio monitoring
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -169,14 +170,25 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
     const canvas = canvasRef.current;
     const video = cameraVideoRef.current;
     
-    if (!canvas || !video || !cameraReady) {
-      console.warn('[Teleprompter drawFrame] Bloqueado:', { 
-        hasCanvas: !!canvas, 
-        hasVideo: !!video, 
-        cameraReady,
-        videoWidth: video?.videoWidth,
-        videoHeight: video?.videoHeight
-      });
+    const debugInfo = { 
+      hasCanvas: !!canvas, 
+      hasVideo: !!video, 
+      cameraReady: cameraReadyRef.current,
+      videoWidth: video?.videoWidth,
+      videoHeight: video?.videoHeight,
+      videoReadyState: video?.readyState
+    };
+    
+    if (!canvas || !video || !cameraReadyRef.current) {
+      console.warn('[Teleprompter drawFrame] Bloqueado:', debugInfo);
+      return;
+    }
+    
+    // Check if video has dimensions
+    if (!video.videoWidth || !video.videoHeight) {
+      console.warn('[Teleprompter drawFrame] Vídeo sem dimensões ainda:', debugInfo);
+      // Retry after a short delay
+      setTimeout(() => drawFrame(), 100);
       return;
     }
 
@@ -184,6 +196,12 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
     if (!ctx) {
       console.error('[Teleprompter drawFrame] Não foi possível obter contexto 2d do canvas');
       return;
+    }
+    
+    // Log only once when drawing starts successfully
+    if (!canvas.dataset.drawing) {
+      console.log('[Teleprompter drawFrame] Iniciando desenho no canvas com sucesso!', debugInfo);
+      canvas.dataset.drawing = 'true';
     }
 
     // Clear canvas
@@ -260,7 +278,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
     }
 
     animationFrameRef.current = requestAnimationFrame(drawFrame);
-  }, [cameraReady, recordTextInVideo, script, teleprompterEnabled, textArea, textPosition, textOpacity, textColor, fontSize]);
+  }, [recordTextInVideo, script, teleprompterEnabled, textArea, textPosition, textOpacity, textColor, fontSize]);
 
   const startRecording = useCallback(async () => {
     console.log('[Teleprompter] startRecording chamado. isRecording:', isRecording, 'isInitializing:', isInitializing);
@@ -304,6 +322,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
 
       // IMPORTANTE: Definir cameraReady ANTES de iniciar drawFrame
       console.log('[Teleprompter] Definindo cameraReady = true ANTES de drawFrame');
+      cameraReadyRef.current = true;
       setCameraReady(true);
       onCameraReady?.(stream);
 
