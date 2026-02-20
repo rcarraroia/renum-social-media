@@ -420,7 +420,7 @@ async def get_process_status(
     )
 
 
-@router.post("/generate-descriptions", response_model=DescriptionGenerateResponse)
+@router.post("/descriptions/generate", response_model=DescriptionGenerateResponse)
 async def generate_descriptions(
     request: DescriptionGenerateRequest,
     user = Depends(get_current_user),
@@ -465,7 +465,7 @@ async def generate_descriptions(
         # Log API call
         duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         await log_api_call(
-            org_id, "module2", "/generate-descriptions", "POST",
+            org_id, "module2", "/descriptions/generate", "POST",
             {"videoId": request.videoId, "platforms": request.platforms},
             {"platforms_generated": len(descriptions)},
             200, duration_ms
@@ -480,7 +480,7 @@ async def generate_descriptions(
         raise HTTPException(status_code=500, detail="Erro ao gerar descrições")
 
 
-@router.post("/regenerate-description")
+@router.post("/descriptions/regenerate")
 async def regenerate_description(
     request: DescriptionRegenerateRequest,
     user = Depends(get_current_user),
@@ -516,7 +516,7 @@ async def regenerate_description(
         # Log API call
         duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         await log_api_call(
-            org_id, "module2", "/regenerate-description", "POST",
+            org_id, "module2", "/descriptions/regenerate", "POST",
             {"videoId": request.videoId, "platform": request.platform},
             {"success": True},
             200, duration_ms

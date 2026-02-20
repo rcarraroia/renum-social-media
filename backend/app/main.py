@@ -93,9 +93,9 @@ app.include_router(integrations.router, prefix="/integrations", tags=["Integrati
 app.include_router(analytics.router, tags=["Analytics"])
 app.include_router(assistant.router, tags=["AI Assistant"])
 app.include_router(leads.router, prefix="/api", tags=["Leads"])
-app.include_router(module1.router, prefix="/api/modules/1", tags=["Module 1 - ScriptAI"])
-app.include_router(module2.router, prefix="/api/modules/2", tags=["Module 2 - PostRápido"])
-app.include_router(module3.router, prefix="/api/modules/3", tags=["Module 3 - AvatarAI"])
+app.include_router(module1.router, prefix="/api/scriptai", tags=["Module 1 - ScriptAI"])
+app.include_router(module2.router, prefix="/api/postrapido", tags=["Module 2 - PostRápido"])
+app.include_router(module3.router, prefix="/api/avatarai", tags=["Module 3 - AvatarAI"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["Async Tasks"])
 

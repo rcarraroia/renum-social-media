@@ -17,7 +17,7 @@ router = APIRouter()
 logger = get_logger("module1")
 
 
-@router.post("/generate-script", response_model=ScriptResponse)
+@router.post("/generate", response_model=ScriptResponse)
 async def generate_script(
     request: GenerateScriptRequest,
     org_id: str = Depends(get_current_organization)
@@ -103,7 +103,7 @@ async def generate_script(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": "/generate-script",
+                "endpoint": "/generate",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -124,7 +124,7 @@ async def generate_script(
         )
 
 
-@router.post("/regenerate-script", response_model=ScriptResponse)
+@router.post("/regenerate", response_model=ScriptResponse)
 async def regenerate_script(
     request: RegenerateScriptRequest,
     org_id: str = Depends(get_current_organization)
@@ -212,7 +212,7 @@ async def regenerate_script(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": "/regenerate-script",
+                "endpoint": "/regenerate",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -231,7 +231,7 @@ async def regenerate_script(
             status_code=500,
             detail="Erro interno. Tente novamente."
         )
-@router.post("/scripts/save-draft", response_model=DraftResponse)
+@router.post("/drafts", response_model=DraftResponse)
 async def save_draft(
     request: SaveDraftRequest,
     org_id: str = Depends(get_current_organization),
@@ -277,7 +277,7 @@ async def save_draft(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": "/scripts/save-draft",
+                "endpoint": "/drafts",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -301,7 +301,7 @@ async def save_draft(
         )
 
 
-@router.get("/scripts/drafts", response_model=DraftListResponse)
+@router.get("/drafts", response_model=DraftListResponse)
 async def list_drafts(
     org_id: str = Depends(get_current_organization)
 ):
@@ -341,7 +341,7 @@ async def list_drafts(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": "/scripts/drafts",
+                "endpoint": "/drafts",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -361,7 +361,7 @@ async def list_drafts(
         )
 
 
-@router.get("/scripts/drafts/{draft_id}", response_model=DraftResponse)
+@router.get("/drafts/{draft_id}", response_model=DraftResponse)
 async def get_draft(
     draft_id: str,
     org_id: str = Depends(get_current_organization)
@@ -395,7 +395,7 @@ async def get_draft(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": f"/scripts/drafts/{draft_id}",
+                "endpoint": f"/drafts/{draft_id}",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -419,7 +419,7 @@ async def get_draft(
         )
 
 
-@router.put("/scripts/drafts/{draft_id}", response_model=DraftResponse)
+@router.put("/drafts/{draft_id}", response_model=DraftResponse)
 async def update_draft(
     draft_id: str,
     request: UpdateDraftRequest,
@@ -480,7 +480,7 @@ async def update_draft(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": f"/scripts/drafts/{draft_id}",
+                "endpoint": f"/drafts/{draft_id}",
                 "status_code": 200
             }).execute()
         await asyncio.to_thread(_log)
@@ -504,7 +504,7 @@ async def update_draft(
         )
 
 
-@router.delete("/scripts/drafts/{draft_id}")
+@router.delete("/drafts/{draft_id}")
 async def delete_draft(
     draft_id: str,
     org_id: str = Depends(get_current_organization)
@@ -538,7 +538,7 @@ async def delete_draft(
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
                 "service_module": "1",
-                "endpoint": f"/scripts/drafts/{draft_id}",
+                "endpoint": f"/drafts/{draft_id}",
                 "status_code": 204
             }).execute()
         await asyncio.to_thread(_log)

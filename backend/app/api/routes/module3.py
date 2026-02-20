@@ -22,7 +22,7 @@ logger = get_logger("module3")
 # Módulo 3 - AvatarAI: Geração de Vídeos com Avatares
 # ============================================================================
 
-@router.post("/generate-video", response_model=VideoGenerationResponse)
+@router.post("/generate", response_model=VideoGenerationResponse)
 async def generate_video(
     request: VideoGenerationRequest,
     org_id: str = Depends(get_current_organization),
@@ -154,7 +154,7 @@ async def generate_video(
         )
 
 
-@router.get("/generate-video/{job_id}/status", response_model=VideoStatusResponse)
+@router.get("/videos/{job_id}/status", response_model=VideoStatusResponse)
 async def get_video_status(
     job_id: str,
     org_id: str = Depends(get_current_organization),
