@@ -1,0 +1,13 @@
+{
+  "name": "Validação Pré-Shell",
+  "version": "1.0.0",
+  "description": "Valida que comandos shell não vão remover funcionalidades ou comprometer ambiente de produção",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["shell"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "VALIDAÇÃO ANTES DE EXECUTAR COMANDO SHELL:\n\n1. SEGURANÇA DO COMANDO:\n   - Este comando pode deletar arquivos importantes?\n   - Este comando pode afetar ambiente de produção?\n   - Este comando pode remover funcionalidades?\n   - Este comando pode comprometer dados?\n\n2. REVERSIBILIDADE:\n   - Posso reverter este comando se algo der errado?\n   - Tenho backup ou forma de recuperação?\n   - O comando é destrutivo ou apenas consultivo?\n\n3. AMBIENTE CORRETO:\n   - Estou executando no ambiente correto (dev/staging/prod)?\n   - As variáveis de ambiente estão corretas?\n   - O comando não vai afetar outros ambientes?\n\n4. LIMITES DE TEMPO:\n   - Este comando vai terminar em tempo razoável?\n   - Não é um comando de longa duração (dev server, watch)?\n   - Estou dentro dos limites de tempo da tarefa?\n\nSe qualquer resposta indicar risco, DEVO reconsiderar o comando ou pedir confirmação ao usuário."
+  }
+}

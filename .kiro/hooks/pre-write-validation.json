@@ -1,0 +1,13 @@
+{
+  "name": "Validação Pré-Escrita",
+  "version": "1.0.0",
+  "description": "Valida que alterações preservam funcionalidades existentes e que schema real do banco foi consultado caso envolva queries",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "VALIDAÇÃO ANTES DE ESCREVER ARQUIVO:\n\n1. PRESERVAÇÃO DE FUNCIONALIDADES:\n   - Esta alteração remove alguma funcionalidade projetada?\n   - Esta alteração quebra alguma integração essencial?\n   - Esta alteração compromete a arquitetura do sistema?\n   - Estou fazendo isso apenas para um teste passar?\n\n2. VALIDAÇÃO DE BANCO (se aplicável):\n   - Se o arquivo contém queries SQL ou acessa banco de dados:\n     * Consultei o schema REAL via Supabase Power?\n     * Verifiquei que as tabelas/colunas existem?\n     * Validei políticas RLS?\n\n3. CORREÇÃO vs CONTORNO:\n   - Estou CORRIGINDO o problema real?\n   - Ou estou CONTORNANDO comentando código/removendo funcionalidades?\n\nSe qualquer resposta for problemática, DEVO reconsiderar a alteração e buscar solução que preserve funcionalidades."
+  }
+}
