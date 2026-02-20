@@ -57,6 +57,9 @@ COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
 # Set working directory
 WORKDIR /app
 
+# Force rebuild - bust cache
+ARG CACHEBUST=2026-02-20-00:05
+
 # Copy application code
 COPY --chown=appuser:appuser ./app ./app
 
