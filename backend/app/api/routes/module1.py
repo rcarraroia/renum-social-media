@@ -35,6 +35,22 @@ async def generate_script(
     start_time = datetime.utcnow()
 
     try:
+        # Validar API keys antes de processar
+        from app.config import settings
+        if not settings.tavily_api_key or settings.tavily_api_key == "placeholder":
+            logger.error("Tavily API key not configured")
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço de pesquisa não configurado. Contate o administrador."
+            )
+        
+        if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
+            logger.error("Anthropic API key not configured")
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço de geração de script não configurado. Contate o administrador."
+            )
+        
         # Tavily pesquisa contexto
         tavily_service = TavilyService()
         search_result = await tavily_service.search(
@@ -48,7 +64,7 @@ async def generate_script(
             logger.error(f"Tavily error: {search_result['error']}")
             raise HTTPException(
                 status_code=502,
-                detail=search_result["error"]["message"]
+                detail=f"Erro na pesquisa: {search_result['error']['message']}"
             )
 
         # Construir contexto da pesquisa
@@ -137,6 +153,22 @@ async def regenerate_script(
     start_time = datetime.utcnow()
 
     try:
+        # Validar API keys antes de processar
+        from app.config import settings
+        if not settings.tavily_api_key or settings.tavily_api_key == "placeholder":
+            logger.error("Tavily API key not configured")
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço de pesquisa não configurado. Contate o administrador."
+            )
+        
+        if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
+            logger.error("Anthropic API key not configured")
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço de geração de script não configurado. Contate o administrador."
+            )
+        
         # Tavily pesquisa contexto
         tavily_service = TavilyService()
         search_result = await tavily_service.search(
@@ -150,7 +182,7 @@ async def regenerate_script(
             logger.error(f"Tavily error: {search_result['error']}")
             raise HTTPException(
                 status_code=502,
-                detail=search_result["error"]["message"]
+                detail=f"Erro na pesquisa: {search_result['error']['message']}"
             )
 
         # Construir contexto da pesquisa

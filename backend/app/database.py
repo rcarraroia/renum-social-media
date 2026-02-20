@@ -95,6 +95,9 @@ async def get_organization_by_user_id(user_id: str) -> str | None:
         ID da organização ou None se não encontrado
     """
     import asyncio
+    from app.utils.logger import get_logger
+    
+    logger = get_logger("database")
     
     def _sync_query():
         result = supabase.table("users").select("organization_id").eq("id", user_id).single().execute()
@@ -103,8 +106,21 @@ async def get_organization_by_user_id(user_id: str) -> str | None:
     try:
         result = await asyncio.to_thread(_sync_query)
         data = result.data if hasattr(result, "data") else result.get("data")
-        return data.get("organization_id") if data else None
-    except Exception:
+        
+        if not data:
+            logger.warning(f"User {user_id} not found in users table")
+            return None
+            
+        org_id = data.get("organization_id")
+        if not org_id:
+            logger.warning(f"User {user_id} has no organization_id")
+            return None
+            
+        logger.info(f"Found organization {org_id} for user {user_id}")
+        return org_id
+        
+    except Exception as e:
+        logger.error(f"Error fetching organization for user {user_id}: {e}", exc_info=True)
         return None
 
 
