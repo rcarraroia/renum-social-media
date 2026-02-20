@@ -102,7 +102,7 @@ async def generate_script(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": "/generate",
                 "status_code": 200
             }).execute()
@@ -211,7 +211,7 @@ async def regenerate_script(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": "/regenerate",
                 "status_code": 200
             }).execute()
@@ -276,7 +276,7 @@ async def save_draft(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": "/drafts",
                 "status_code": 200
             }).execute()
@@ -340,7 +340,7 @@ async def list_drafts(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": "/drafts",
                 "status_code": 200
             }).execute()
@@ -394,7 +394,7 @@ async def get_draft(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": f"/drafts/{draft_id}",
                 "status_code": 200
             }).execute()
@@ -479,7 +479,7 @@ async def update_draft(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": f"/drafts/{draft_id}",
                 "status_code": 200
             }).execute()
@@ -537,7 +537,7 @@ async def delete_draft(
         def _log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "1",
+                "module": "1",
                 "endpoint": f"/drafts/{draft_id}",
                 "status_code": 204
             }).execute()

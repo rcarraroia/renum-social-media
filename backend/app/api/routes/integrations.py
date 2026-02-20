@@ -214,7 +214,7 @@ async def get_heygen_credits(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "get_credits",
                 "status_code": 200
             }).execute()
@@ -293,7 +293,7 @@ async def get_heygen_avatars(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "get_avatars",
                 "status_code": 200
             }).execute()
@@ -370,7 +370,7 @@ async def get_heygen_voices(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "get_voices",
                 "status_code": 200
             }).execute()

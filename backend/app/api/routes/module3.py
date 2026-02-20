@@ -127,7 +127,7 @@ async def generate_video(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "generate_video",
                 "status_code": 202
             }).execute()
@@ -323,7 +323,7 @@ async def get_video_status(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "get_video_status",
                 "status_code": 200
             }).execute()
@@ -401,7 +401,7 @@ async def send_to_postrapido(
         def _sync_log():
             return supabase.table("api_logs").insert({
                 "organization_id": org_id,
-                "service_module": "3",
+                "module": "3",
                 "endpoint": "send_to_postrapido",
                 "status_code": 200
             }).execute()
