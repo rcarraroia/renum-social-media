@@ -3,8 +3,6 @@ Error Handlers Globais - Tratamento centralizado de erros
 
 Este módulo implementa handlers para:
 - Erros de validação Pydantic (422)
-- Erros da API do Metricool (502)
-- Rate limit do Metricool (429)
 - Exceções genéricas não-tratadas (500)
 
 Validates: Requirements 12.1, 12.2, 12.3, 12.4
@@ -13,12 +11,6 @@ Validates: Requirements 12.1, 12.2, 12.3, 12.4
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.services.metricool import (
-    MetricoolAPIError,
-    MetricoolAuthError,
-    MetricoolRateLimitError,
-    MetricoolNotFoundError
-)
 from app.utils.logger import get_logger
 
 logger = get_logger("error_handlers")
@@ -66,94 +58,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "detail": formatted_errors,
             "message": "Dados inválidos. Verifique os campos e tente novamente."
-        }
-    )
-
-
-async def metricool_error_handler(request: Request, exc: MetricoolAPIError) -> JSONResponse:
-    """
-    Handler para erros da API do Metricool (502).
-    
-    Traduz erros técnicos do Metricool para mensagens amigáveis em português.
-    
-    Args:
-        request: Requisição FastAPI
-        exc: Exceção da API do Metricool
-    
-    Returns:
-        JSONResponse com status 502 e mensagem amigável
-    
-    Validates: Requirement 12.1
-    """
-    logger.error(
-        f"Metricool API error: {exc.message}",
-        extra={
-            "path": request.url.path,
-            "method": request.method,
-            "status_code": exc.status_code,
-            "response_data": exc.response_data,
-            "service_module": "error_handlers",
-            "endpoint": "metricool_error_handler"
-        },
-        exc_info=True
-    )
-    
-    # Traduzir mensagens técnicas para português amigável
-    friendly_message = "Serviço de agendamento temporariamente indisponível. Tente novamente em alguns minutos."
-    
-    # Mensagens específicas baseadas no erro
-    if isinstance(exc, MetricoolAuthError):
-        friendly_message = "Erro de autenticação com serviço de redes sociais. Verifique suas credenciais em Settings."
-    elif isinstance(exc, MetricoolNotFoundError):
-        friendly_message = "Recurso não encontrado no serviço de agendamento."
-    elif "timeout" in str(exc.message).lower():
-        friendly_message = "Tempo limite excedido ao comunicar com serviço de agendamento. Tente novamente."
-    elif "connection" in str(exc.message).lower():
-        friendly_message = "Erro de conexão com serviço de agendamento. Verifique sua internet."
-    
-    return JSONResponse(
-        status_code=status.HTTP_502_BAD_GATEWAY,
-        content={
-            "detail": friendly_message,
-            "error_type": "metricool_api_error"
-        }
-    )
-
-
-async def metricool_rate_limit_handler(request: Request, exc: MetricoolRateLimitError) -> JSONResponse:
-    """
-    Handler para rate limit do Metricool (429).
-    
-    Retorna tempo de espera em segundos no header Retry-After.
-    
-    Args:
-        request: Requisição FastAPI
-        exc: Exceção de rate limit
-    
-    Returns:
-        JSONResponse com status 429 e header Retry-After
-    
-    Validates: Requirement 12.4
-    """
-    logger.warning(
-        f"Metricool rate limit exceeded: retry after {exc.retry_after}s",
-        extra={
-            "path": request.url.path,
-            "method": request.method,
-            "retry_after": exc.retry_after,
-            "service_module": "error_handlers",
-            "endpoint": "metricool_rate_limit_handler"
-        }
-    )
-    
-    return JSONResponse(
-        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        content={
-            "detail": f"Limite de requisições atingido. Tente novamente em {exc.retry_after} segundos.",
-            "retry_after": exc.retry_after
-        },
-        headers={
-            "Retry-After": str(exc.retry_after)
         }
     )
 
@@ -243,12 +147,6 @@ def register_error_handlers(app):
     # Handler para erros de validação Pydantic
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     
-    # Handlers para erros do Metricool
-    app.add_exception_handler(MetricoolAPIError, metricool_error_handler)
-    app.add_exception_handler(MetricoolAuthError, metricool_error_handler)
-    app.add_exception_handler(MetricoolNotFoundError, metricool_error_handler)
-    app.add_exception_handler(MetricoolRateLimitError, metricool_rate_limit_handler)
-    
     # Handler genérico para exceções não-tratadas
     app.add_exception_handler(Exception, generic_exception_handler)
     
@@ -258,8 +156,6 @@ def register_error_handlers(app):
             "service_module": "error_handlers",
             "handlers": [
                 "validation_exception_handler",
-                "metricool_error_handler",
-                "metricool_rate_limit_handler",
                 "generic_exception_handler"
             ]
         }

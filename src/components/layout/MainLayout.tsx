@@ -4,6 +4,8 @@ import Sidebar from "./Sidebar";
 import HamburgerButton from "./HamburgerButton";
 import { useCloseSidebarOnNavigate } from "@/hooks/useCloseSidebarOnNavigate";
 import AIAssistant from "@/components/AIAssistant";
+import ProactiveAssistantNotification from "@/components/ProactiveAssistantNotification";
+import { useProactiveAssistant } from "@/hooks/useProactiveAssistant";
 
 type Props = {
   children: React.ReactNode;
@@ -11,6 +13,7 @@ type Props = {
 
 const MainLayout: React.FC<Props> = ({ children }) => {
   useCloseSidebarOnNavigate();
+  const { pendingTrigger, dismissTrigger, handleAction } = useProactiveAssistant();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -32,6 +35,15 @@ const MainLayout: React.FC<Props> = ({ children }) => {
 
       {/* AI Assistant */}
       <AIAssistant />
+
+      {/* Proactive Assistant Notifications */}
+      {pendingTrigger && (
+        <ProactiveAssistantNotification
+          trigger={pendingTrigger}
+          onDismiss={dismissTrigger}
+          onAction={handleAction}
+        />
+      )}
     </div>
   );
 };

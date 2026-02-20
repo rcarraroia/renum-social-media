@@ -16,7 +16,7 @@ from app.api.routes import (
     module2, 
     module3, 
     module1, 
-    # leads,  # Comentado temporariamente - depende de database.py que não existe
+    leads,
     analytics,
     assistant
 )
@@ -96,7 +96,7 @@ app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
 app.include_router(analytics.router, tags=["Analytics"])
 app.include_router(assistant.router, tags=["AI Assistant"])
-# app.include_router(leads.router, prefix="/api", tags=["Leads"])  # Comentado temporariamente
+app.include_router(leads.router, prefix="/api", tags=["Leads"])
 app.include_router(module1.router, prefix="/api/modules/1", tags=["Module 1 - ScriptAI"])
 app.include_router(module2.router, prefix="/api/modules/2", tags=["Module 2 - PostRápido"])
 app.include_router(module3.router, prefix="/api/modules/3", tags=["Module 3 - AvatarAI"])

@@ -16,6 +16,7 @@ type TeleprompterRecorderProps = {
   scrollPosition?: number;
   teleprompterEnabled?: boolean;
   onToggleTeleprompter?: () => void;
+  onStartScroll?: () => void; // Nova prop para iniciar scroll
 };
 
 const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
@@ -33,6 +34,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   scrollPosition = 0,
   teleprompterEnabled = true,
   onToggleTeleprompter,
+  onStartScroll,
 }) => {
   console.log('[DEBUG TeleprompterRecorder] Props recebidas:', { 
     script: script?.substring(0, 50) + '...', 
@@ -49,6 +51,7 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
   const [cameraReady, setCameraReady] = useState(false);
   const [recordTextInVideo, setRecordTextInVideo] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // Debug: Monitor cameraReady changes
   useEffect(() => {
@@ -280,6 +283,29 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
 
     animationFrameRef.current = requestAnimationFrame(drawFrame);
   }, [recordTextInVideo, script, teleprompterEnabled, textArea, textPosition, textOpacity, textColor, fontSize]);
+
+  // Função para iniciar com contagem regressiva
+  const startWithCountdown = useCallback(async () => {
+    if (isRecording || isInitializing || countdown !== null) return;
+
+    // Contagem regressiva: 3, 2, 1
+    for (let i = 3; i > 0; i--) {
+      setCountdown(i);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    setCountdown(null);
+    
+    // Iniciar gravação
+    await startRecording();
+    
+    // Iniciar scroll do teleprompter após 1 segundo
+    setTimeout(() => {
+      if (onStartScroll) {
+        onStartScroll();
+      }
+    }, 1000);
+  }, [isRecording, isInitializing, countdown, onStartScroll]);
 
   const startRecording = useCallback(async () => {
     console.log('[Teleprompter] startRecording chamado. isRecording:', isRecording, 'isInitializing:', isInitializing);
@@ -514,12 +540,18 @@ const TeleprompterRecorder: React.FC<TeleprompterRecorderProps> = ({
         </div>
         <div className="flex gap-2 flex-wrap">
           <button
-            onClick={startRecording}
-            disabled={isRecording || isInitializing}
-            className="flex-1 md:flex-none px-4 py-2 rounded bg-red-600 text-white disabled:opacity-50 hover:bg-red-700 transition-colors flex items-center justify-center gap-2 min-h-[44px] touch-manipulation"
+            onClick={startWithCountdown}
+            disabled={isRecording || isInitializing || countdown !== null}
+            className="flex-1 md:flex-none px-4 py-2 rounded bg-red-600 text-white disabled:opacity-50 hover:bg-red-700 transition-colors flex items-center justify-center gap-2 min-h-[44px] touch-manipulation font-semibold"
           >
-            <span className={isRecording ? "hidden" : "inline-block w-3 h-3 rounded-full bg-white"}></span>
-            {isInitializing ? "Iniciando..." : isRecording ? "Gravando..." : "Iniciar"}
+            {countdown !== null ? (
+              <span className="text-2xl">{countdown}</span>
+            ) : (
+              <>
+                <span className={isRecording ? "hidden" : "inline-block w-3 h-3 rounded-full bg-white"}></span>
+                {isInitializing ? "Iniciando..." : isRecording ? "Gravando..." : "🔴 Iniciar Gravação"}
+              </>
+            )}
           </button>
           <button
             onClick={stopRecording}

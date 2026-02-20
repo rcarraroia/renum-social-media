@@ -13,17 +13,21 @@
     },
     "metricool": {
       "command": "uvx",
-      "args": ["mcp-metricool"],
+      "args": [
+        "mcp-metricool"
+      ],
       "env": {
         "METRICOOL_USER_TOKEN": "YOUR_METRICOOL_TOKEN_HERE",
         "METRICOOL_USER_ID": "YOUR_METRICOOL_USER_ID_HERE"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": []
     },
     "heygen": {
       "command": "uvx",
-      "args": ["heygen-mcp"],
+      "args": [
+        "heygen-mcp"
+      ],
       "env": {
         "HEYGEN_API_KEY": "sk_V2_hgu_kOR3Anr3t1G_r2i84woGDFdQHFlR888TjsRm7x5ViUcS"
       },

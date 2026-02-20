@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from app.services.claude import ClaudeService
 from app.services.tavily import TavilyService
-from app.services.metricool import MetricoolService
 from app.utils.logger import get_logger
 import asyncio
 
@@ -80,7 +79,6 @@ class AIAssistantService:
         """Inicializa o serviço com dependências"""
         self._claude = ClaudeService()
         self._tavily = TavilyService()
-        self._metricool = MetricoolService()
         self._logger = get_logger("ai_assistant")
         self._tools = self._register_tools()
         self._logger.info("AIAssistantService initialized")
@@ -443,8 +441,25 @@ class AIAssistantService:
             
         Validates: Requirements 6.2, 6.3
         """
-        # Template base com capacidades e diretrizes
-        base_prompt = """Você é o assistente AI do RENUM Social AI, uma plataforma de automação de conteúdo para redes sociais.
+        # Personalidade da Rena
+        personality_prompt = """Você é a Rena, a assistente AI do RENUM Social AI! 🦌
+
+Sua Personalidade:
+- Nome: Rena (mascote da RENUM)
+- Tom: Amigável, motivador, entusiasta
+- Estilo: Usa emojis naturalmente, celebra conquistas, encoraja tentativas
+- Linguagem: Informal mas profissional, como um colega experiente
+- Humor: Leve e positivo, nunca sarcástico
+
+Exemplos de como você fala:
+❌ "Script gerado com sucesso."
+✅ "🎉 Pronto! Seu script ficou incrível! Quer que eu leia para você ou já vamos gravar?"
+
+❌ "Erro ao processar."
+✅ "Ops! 😅 Algo deu errado aqui. Vamos tentar de novo? Ou posso ajudar de outra forma?"
+
+❌ "Post agendado."
+✅ "Agendado! 📅 Seu post vai bombar na terça às 18h. Quer que eu sugira mais horários?"
 
 Suas capacidades:
 - Gerar e regenerar scripts de vídeo
@@ -456,11 +471,13 @@ Suas capacidades:
 - Navegar entre páginas do sistema
 
 Diretrizes:
-- Seja conciso e objetivo nas respostas
+- Seja conciso mas caloroso nas respostas
 - Use linguagem natural e amigável
 - Sempre confirme antes de executar ações destrutivas (cancelar posts)
 - Sugira ações proativas baseadas no contexto
 - Forneça insights acionáveis quando consultar analytics
+- Celebre conquistas do usuário (primeiro vídeo, post publicado, etc.)
+- Encoraje quando houver dificuldades
 """
 
         # Contexto específico da página
@@ -531,7 +548,7 @@ O usuário está gerenciando configurações da conta. Você pode:
             additional = f"\n\nContexto adicional:\n{context.additional_context}"
         
         # Montar prompt completo
-        full_prompt = f"{base_prompt}\n{page_specific}{additional}"
+        full_prompt = f"{personality_prompt}\n{page_specific}{additional}"
         
         self._logger.debug(
             f"Built system prompt for page: {context.page_name}",
@@ -734,7 +751,7 @@ O usuário está gerenciando configurações da conta. Você pode:
                 "error": f"Formato de data inválido: {e}"
             }
         
-        # TODO: Implementar agendamento via MetricoolService
+        # TODO: Implementar agendamento via Mixpost (sprint futura)
         # Por enquanto, retornar sucesso simulado
         return {
             "success": True,
@@ -764,7 +781,7 @@ O usuário está gerenciando configurações da conta. Você pode:
                 "error": f"Formato de data inválido: {e}"
             }
         
-        # TODO: Implementar reagendamento via MetricoolService
+        # TODO: Implementar reagendamento via Mixpost (sprint futura)
         return {
             "success": True,
             "message": f"Post {post_id} reagendado para {new_time}",
@@ -775,7 +792,7 @@ O usuário está gerenciando configurações da conta. Você pode:
         """Executa tool cancel_post"""
         post_id = arguments.get("post_id")
         
-        # TODO: Implementar cancelamento via MetricoolService
+        # TODO: Implementar cancelamento via Mixpost (sprint futura)
         return {
             "success": True,
             "message": f"Post {post_id} cancelado",

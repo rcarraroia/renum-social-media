@@ -91,7 +91,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
+    command: python -m celery -A app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
     environment:
       # Python Path
       - PYTHONPATH=/app
@@ -147,7 +147,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A app.celery_app beat --loglevel=info
+    command: python -m celery -A app.celery_app beat --loglevel=info
     environment:
       # Python Path
       - PYTHONPATH=/app

@@ -1,21 +1,41 @@
 {
   "name": "RENUM Social AI",
   "short_name": "RENUM",
-  "description": "Automatize seus vídeos para redes sociais com IA",
-  "theme_color": "#6366f1",
-  "background_color": "#ffffff",
+  "description": "Automatize seus vídeos com IA",
+  "start_url": "/",
   "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "social", "video"],
+  "shortcuts": [
+    {
+      "name": "Criar Script",
+      "short_name": "Script",
+      "description": "Criar novo script com IA",
+      "url": "/module-1/script-ai",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Gravar Vídeo",
+      "short_name": "Gravar",
+      "description": "Gravar vídeo com teleprompter",
+      "url": "/module-1/teleprompter",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

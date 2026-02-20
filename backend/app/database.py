@@ -1,51 +1,84 @@
-import asyncio
+"""
+Database connection and session management
+"""
 from supabase import create_client, Client
 from app.config import settings
-from typing import Any, Optional, Dict
+from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 
-# create client using service role key for backend operations
-supabase: Client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+# Cliente Supabase global
+supabase: Client = create_client(
+    settings.supabase_url,
+    settings.supabase_service_role_key
+)
 
-async def get_organization_by_user_id(user_id: str) -> Optional[str]:
+
+class AsyncSupabaseSession:
     """
-    Busca organization_id do usuário diretamente com service role (bypass RLS)
+    Wrapper assíncrono para operações do Supabase
+    Simula comportamento de AsyncSession do SQLAlchemy
     """
-    def _sync_direct():
-        return supabase.table("users").select("organization_id").eq("id", user_id).limit(1).execute()
+    def __init__(self, client: Client):
+        self.client = client
+        self._in_transaction = False
     
-    try:
-        res = await asyncio.to_thread(_sync_direct)
-        data = res.data[0] if res.data and len(res.data) > 0 else None
-        return data.get("organization_id") if data else None
-    except Exception as e:
-        return None
+    async def execute(self, query: str, params: dict = None):
+        """
+        Executa query SQL raw via Supabase RPC
+        """
+        import asyncio
+        
+        def _sync_execute():
+            # Para queries SELECT
+            if query.strip().upper().startswith("SELECT"):
+                # Extrair tabela e condições (simplificado)
+                if "FROM" in query.upper():
+                    parts = query.upper().split("FROM")[1].split("WHERE")
+                    table = parts[0].strip()
+                    
+                    result = self.client.table(table).select("*")
+                    
+                    if params:
+                        for key, value in params.items():
+                            result = result.eq(key, value)
+                    
+                    return result.execute()
+            
+            # Para queries INSERT
+            elif query.strip().upper().startswith("INSERT"):
+                # Extrair tabela (simplificado)
+                table = query.split("INTO")[1].split("(")[0].strip()
+                
+                if params:
+                    return self.client.table(table).insert(params).execute()
+            
+            return None
+        
+        return await asyncio.to_thread(_sync_execute)
+    
+    async def commit(self):
+        """Commit da transação (no-op para Supabase)"""
+        self._in_transaction = False
+    
+    async def rollback(self):
+        """Rollback da transação (no-op para Supabase)"""
+        self._in_transaction = False
 
-async def log_api_call(
-    organization_id: Optional[str],
-    service: str,
-    endpoint: str,
-    method: str,
-    request_body: Dict[str, Any],
-    response_body: Dict[str, Any],
-    status_code: int,
-    duration_ms: int
-) -> None:
+
+@asynccontextmanager
+async def get_db() -> AsyncGenerator[AsyncSupabaseSession, None]:
     """
-    Registra chamada de API na tabela api_logs (async wrapper)
+    Dependency para obter sessão do banco de dados
+    
+    Usage:
+        @router.get("/items")
+        async def get_items(db: AsyncSession = Depends(get_db)):
+            result = await db.execute("SELECT * FROM items")
+            return result
     """
-    def _sync_insert():
-        return supabase.table("api_logs").insert({
-            "organization_id": organization_id,
-            "service": service,
-            "endpoint": endpoint,
-            "method": method,
-            "request_body": request_body,
-            "response_body": response_body,
-            "status_code": status_code,
-            "duration_ms": duration_ms
-        }).execute()
+    session = AsyncSupabaseSession(supabase)
     try:
-        await asyncio.to_thread(_sync_insert)
-    except Exception:
-        # do not raise from logger helper
+        yield session
+    finally:
+        # Cleanup se necessário
         pass

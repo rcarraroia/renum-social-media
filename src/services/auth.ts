@@ -93,7 +93,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
           metricool_user_id: organization.metricool_user_id ?? null,
           metricool_blog_id: organization.metricool_blog_id ?? null,
           heygen_api_key: organization.heygen_api_key ?? null,
-          opusclip_api_key: organization.opusclip_api_key ?? null,
+          onboarding_completed: organization.onboarding_completed ?? null,
           created_at: organization.created_at ?? null,
           updated_at: organization.updated_at ?? null,
         }

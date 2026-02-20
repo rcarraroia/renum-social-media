@@ -1,20 +1,20 @@
-# Documentation
-docs/
-*.md
-README.md
-
-# Git
-.git/
-.gitignore
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Virtual environments
 venv/
+env/
 ENV/
 .venv
 
@@ -25,27 +25,27 @@ ENV/
 *.swo
 *~
 
-# Environment
+# Environment files
 .env
 .env.local
 .env.*.local
 
-# Docker
-docker-compose.yml
-Dockerfile
-.dockerignore
-
-# Migrations (already applied in production)
-migrations/
-
 # Tests
 tests/
-test_*.py
-*_test.py
+*.test.py
 
-# Logs
+# Documentation
+*.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Temporary files
 *.log
-logs/
+*.tmp
+/tmp/
 
 # OS
 .DS_Store

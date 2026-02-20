@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -18,16 +20,25 @@ import Module1 from "./pages/Module1";
 import Module3 from "./pages/Module3";
 import PostsFlowsLanding from "./pages/PostsFlowsLanding";
 import MyVideos from "./pages/MyVideos";
+import TeleprompterRecording from "./pages/TeleprompterRecording";
 
 const queryClient = new QueryClient();
 
+// Component to track page views
+function PageTracker() {
+  usePageTracking();
+  return null;
+}
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <PageTracker />
+          <Routes>
           {/* Public */}
           <Route path="/" element={<PostsFlowsLanding />} />
           <Route path="/posts-flows" element={<PostsFlowsLanding />} />
@@ -58,6 +69,16 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Module1 />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Teleprompter Recording (fullscreen) */}
+          <Route
+            path="/module-1/teleprompter"
+            element={
+              <ProtectedRoute>
+                <TeleprompterRecording />
               </ProtectedRoute>
             }
           />
@@ -133,6 +154,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

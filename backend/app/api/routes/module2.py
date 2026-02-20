@@ -19,7 +19,6 @@ from app.models.schemas import (
 from app.services.video_processing import VideoProcessingService
 from app.services.transcription import TranscriptionService
 from app.services.claude import ClaudeService
-from app.services.metricool import MetricoolService
 from app.database import supabase, log_api_call
 from app.config import settings
 from app.utils.logger import get_logger
@@ -539,128 +538,13 @@ async def schedule_posts(
     org_id: str = Depends(get_current_organization)
 ):
     """
-    Schedule posts to social media platforms via Metricool API
-    """
-    start_time = datetime.utcnow()
+    Schedule posts to social media platforms
     
-    try:
-        # Get processed video
-        def _get_video():
-            return supabase.table("videos").select("*").eq("id", request.videoId).eq("organization_id", org_id).single().execute()
-        
-        video_res = await asyncio.to_thread(_get_video)
-        video_data = video_res.data if hasattr(video_res, "data") else video_res.get("data")
-        
-        if not video_data:
-            raise HTTPException(status_code=404, detail="Vídeo não encontrado")
-        
-        if not video_data.get("processed_url"):
-            raise HTTPException(status_code=400, detail="Vídeo não foi processado")
-        
-        # Get blog_id from organization
-        def _get_org():
-            return supabase.table("organizations").select("metricool_blog_id").eq("id", org_id).single().execute()
-        org_res = await asyncio.to_thread(_get_org)
-        org_data = org_res.data if hasattr(org_res, "data") else org_res.get("data")
-        
-        blog_id = org_data.get("metricool_blog_id") if org_data else None
-        
-        if not blog_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Redes sociais não conectadas. Configure em Settings → Redes Sociais."
-            )
-        
-        # Initialize Metricool service (credentials from system config)
-        metricool_service = MetricoolService()
-        
-        # Verify connected accounts for this blog
-        connected_accounts = await metricool_service.get_connected_accounts(blog_id)
-        
-        scheduled_posts = []
-        errors = []
-        
-        for schedule in request.schedules:
-            try:
-                # Validate scheduled date is in future
-                scheduled_dt = datetime.fromisoformat(schedule.scheduledAt.replace("Z", "+00:00"))
-                if scheduled_dt <= datetime.utcnow():
-                    errors.append(f"{schedule.platform}: Data deve ser no futuro")
-                    continue
-                
-                # Check if platform is connected
-                platform_lower = schedule.platform.lower()
-                if platform_lower not in connected_accounts and platform_lower != "x":
-                    # X might be listed as twitter
-                    if platform_lower == "x" and "twitter" not in connected_accounts:
-                        errors.append(f"{schedule.platform}: Plataforma não conectada")
-                        continue
-                
-                # Schedule post via Metricool API
-                result = await metricool_service.schedule_post(
-                    blog_id=blog_id,
-                    platform=schedule.platform,
-                    text=schedule.description,
-                    media_url=video_data["processed_url"],
-                    scheduled_at=schedule.scheduledAt,
-                    timezone="UTC"
-                )
-                
-                if result.get("success"):
-                    post_id = str(uuid.uuid4())
-                    
-                    # Save to database
-                    def _insert_post():
-                        return supabase.table("posts").insert({
-                            "id": post_id,
-                            "organization_id": org_id,
-                            "video_id": request.videoId,
-                            "platform": schedule.platform,
-                            "description": schedule.description,
-                            "scheduled_at": schedule.scheduledAt,
-                            "status": "scheduled",
-                            "external_post_id": result.get("external_post_id")
-                        }).execute()
-                    
-                    await asyncio.to_thread(_insert_post)
-                    
-                    scheduled_posts.append({
-                        "postId": post_id,
-                        "platform": schedule.platform,
-                        "scheduledAt": schedule.scheduledAt,
-                        "status": "scheduled"
-                    })
-                else:
-                    errors.append(f"{schedule.platform}: Falha ao agendar")
-                    
-            except Exception as e:
-                logger.error(f"Error scheduling {schedule.platform}: {e}")
-                errors.append(f"{schedule.platform}: {str(e)}")
-        
-        # Log API call
-        duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
-        await log_api_call(
-            org_id, "module2", "/schedule", "POST",
-            {"videoId": request.videoId, "platforms": len(request.schedules)},
-            {"scheduled": len(scheduled_posts), "errors": len(errors)},
-            200, duration_ms
-        )
-        
-        if not scheduled_posts and errors:
-            raise HTTPException(status_code=502, detail=f"Erro ao agendar posts: {'; '.join(errors)}")
-        
-        message = f"{len(scheduled_posts)} posts agendados com sucesso"
-        if errors:
-            message += f" ({len(errors)} falharam)"
-        
-        return ScheduleResponse(
-            scheduled=scheduled_posts,
-            message=message
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Scheduling error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Erro ao agendar posts")
+    NOTA: Funcionalidade de agendamento temporariamente desabilitada.
+    Será reimplementada com Mixpost em sprint futura.
+    """
+    raise HTTPException(
+        status_code=501,
+        detail="Funcionalidade de agendamento temporariamente desabilitada. Será reimplementada em breve."
+    )
 

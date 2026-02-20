@@ -1,178 +1,297 @@
-import { supabase } from "../integrations/supabase/client";
-import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
-const sb: any = supabase;
+// Event types
+export type AnalyticsEventType =
+  | "page_view"
+  | "script_generated"
+  | "video_recorded"
+  | "post_scheduled"
+  | "post_published"
+  | "assistant_interaction"
+  | "error"
+  | "friction_point"
+  | "feature_used"
+  | "user_action";
 
-/**
- * Fetch published posts in a date range (optionally by platform)
- */
-export async function getPublishedPosts(
-  organizationId: string,
-  startDate: string,
-  endDate: string,
-  platform?: string,
-) {
-  if (!organizationId) return { data: null, error: "missing orgId" };
-
-  let query: any = sb
-    .from("posts")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .eq("status", "published")
-    .gte("published_at", startDate)
-    .lte("published_at", endDate);
-
-  if (platform && platform !== "all") {
-    query = query.eq("platform", platform);
-  }
-
-  const res: any = await query.order("published_at", { ascending: false });
-  return { data: res?.data ?? null, error: res?.error ?? null };
-}
-
-/**
- * Calculate aggregated metrics from posts array
- */
-export function calculateMetrics(posts: any[]) {
-  const totalViews = (posts || []).reduce((sum, p) => sum + (p.views || 0), 0);
-  const totalLikes = (posts || []).reduce((sum, p) => sum + (p.likes || 0), 0);
-  const totalComments = (posts || []).reduce((sum, p) => sum + (p.comments || 0), 0);
-  const totalShares = (posts || []).reduce((sum, p) => sum + (p.shares || 0), 0);
-
-  const avgEngagement =
-    posts && posts.length > 0 ? posts.reduce((sum, p) => sum + (p.engagement_rate || 0), 0) / posts.length : 0;
-
-  return {
-    reach: totalViews,
-    likes: totalLikes,
-    comments: totalComments,
-    shares: totalShares,
-    posts: posts?.length ?? 0,
-    engagement: avgEngagement,
+// Event data structure
+export interface AnalyticsEvent {
+  event_type: AnalyticsEventType;
+  event_name: string;
+  user_id?: string;
+  session_id: string;
+  page_path: string;
+  page_title: string;
+  timestamp: string;
+  properties?: Record<string, any>;
+  device_info?: {
+    userAgent: string;
+    platform: string;
+    screenWidth: number;
+    screenHeight: number;
+    isMobile: boolean;
+    isTablet: boolean;
+    isDesktop: boolean;
+  };
+  performance?: {
+    loadTime?: number;
+    renderTime?: number;
+    interactionTime?: number;
   };
 }
 
-/**
- * Build engagement trend grouped by day
- */
-export function getEngagementTrend(posts: any[]) {
-  const grouped: Record<string, any[]> = {};
-  (posts || []).forEach((post) => {
-    const day = format(new Date(post.published_at), "dd/MM");
-    if (!grouped[day]) grouped[day] = [];
-    grouped[day].push(post);
-  });
+class AnalyticsService {
+  private sessionId: string;
+  private queue: AnalyticsEvent[] = [];
+  private flushInterval: number = 5000; // 5 seconds
+  private maxQueueSize: number = 10;
+  private flushTimer: NodeJS.Timeout | null = null;
 
-  return Object.entries(grouped).map(([date, dayPosts]) => ({
-    date,
-    engagement: (dayPosts.reduce((s, p) => s + (p.engagement_rate || 0), 0) / dayPosts.length) * 100,
-    reach: dayPosts.reduce((s, p) => s + (p.views || 0), 0),
-    posts: dayPosts.length,
-  }));
-}
+  constructor() {
+    this.sessionId = this.generateSessionId();
+    this.startFlushTimer();
+    this.setupBeforeUnload();
+  }
 
-/**
- * Top posts by engagement rate
- */
-export function getTopPosts(posts: any[], limit = 5) {
-  return (posts || [])
-    .slice()
-    .sort((a, b) => (b.engagement_rate || 0) - (a.engagement_rate || 0))
-    .slice(0, limit);
-}
+  private generateSessionId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
 
-/**
- * Network performance aggregated
- */
-export function getNetworkPerformance(posts: any[]) {
-  const byNetwork: Record<string, any[]> = {};
-  (posts || []).forEach((post) => {
-    if (!byNetwork[post.platform]) byNetwork[post.platform] = [];
-    byNetwork[post.platform].push(post);
-  });
+  private startFlushTimer() {
+    this.flushTimer = setInterval(() => {
+      this.flush();
+    }, this.flushInterval);
+  }
 
-  const result = Object.entries(byNetwork).map(([platform, platformPosts]) => {
-    const metrics = calculateMetrics(platformPosts);
+  private setupBeforeUnload() {
+    window.addEventListener("beforeunload", () => {
+      this.flush(true);
+    });
+  }
+
+  private getDeviceInfo() {
     return {
-      platform,
-      posts: metrics.posts,
-      reach: metrics.reach,
-      likes: metrics.likes,
-      comments: metrics.comments,
-      engagement: (metrics.engagement ?? 0) * 100, // make percent
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      isMobile: /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent) || window.innerWidth < 768,
+      isTablet: /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) || (window.innerWidth >= 768 && window.innerWidth < 1024),
+      isDesktop: window.innerWidth >= 1024,
     };
-  });
+  }
 
-  return result;
+  private async getCurrentUserId(): Promise<string | undefined> {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id;
+  }
+
+  async track(
+    eventType: AnalyticsEventType,
+    eventName: string,
+    properties?: Record<string, any>,
+    performance?: AnalyticsEvent["performance"]
+  ) {
+    const userId = await this.getCurrentUserId();
+
+    const event: AnalyticsEvent = {
+      event_type: eventType,
+      event_name: eventName,
+      user_id: userId,
+      session_id: this.sessionId,
+      page_path: window.location.pathname,
+      page_title: document.title,
+      timestamp: new Date().toISOString(),
+      properties,
+      device_info: this.getDeviceInfo(),
+      performance,
+    };
+
+    // Add to queue
+    this.queue.push(event);
+
+    // Save to localStorage as fallback
+    this.saveToLocalStorage(event);
+
+    // Flush if queue is full
+    if (this.queue.length >= this.maxQueueSize) {
+      await this.flush();
+    }
+  }
+
+  private saveToLocalStorage(event: AnalyticsEvent) {
+    try {
+      const stored = localStorage.getItem("analytics_queue");
+      const queue = stored ? JSON.parse(stored) : [];
+      queue.push(event);
+      
+      // Keep only last 100 events
+      if (queue.length > 100) {
+        queue.shift();
+      }
+      
+      localStorage.setItem("analytics_queue", JSON.stringify(queue));
+    } catch (error) {
+      console.error("Failed to save analytics to localStorage:", error);
+    }
+  }
+
+  private async flush(sync: boolean = false) {
+    if (this.queue.length === 0) return;
+
+    const eventsToSend = [...this.queue];
+    this.queue = [];
+
+    try {
+      if (sync && navigator.sendBeacon) {
+        // Use sendBeacon for synchronous requests (on page unload)
+        const blob = new Blob([JSON.stringify(eventsToSend)], { type: "application/json" });
+        navigator.sendBeacon("/api/analytics/track", blob);
+      } else {
+        // Use regular fetch for async requests
+        const { error } = await supabase.from("analytics_events").insert(
+          eventsToSend.map((event) => ({
+            event_type: event.event_type,
+            event_name: event.event_name,
+            user_id: event.user_id,
+            session_id: event.session_id,
+            page_path: event.page_path,
+            page_title: event.page_title,
+            properties: event.properties,
+            device_info: event.device_info,
+            performance: event.performance,
+            created_at: event.timestamp,
+          }))
+        );
+
+        if (error) {
+          console.error("Failed to send analytics:", error);
+          // Re-add to queue on failure
+          this.queue.unshift(...eventsToSend);
+        } else {
+          // Clear localStorage on success
+          this.clearLocalStorage(eventsToSend);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to flush analytics:", error);
+      // Re-add to queue on failure
+      this.queue.unshift(...eventsToSend);
+    }
+  }
+
+  private clearLocalStorage(sentEvents: AnalyticsEvent[]) {
+    try {
+      const stored = localStorage.getItem("analytics_queue");
+      if (!stored) return;
+
+      const queue = JSON.parse(stored);
+      const remaining = queue.filter(
+        (event: AnalyticsEvent) =>
+          !sentEvents.some((sent) => sent.timestamp === event.timestamp)
+      );
+
+      localStorage.setItem("analytics_queue", JSON.stringify(remaining));
+    } catch (error) {
+      console.error("Failed to clear localStorage:", error);
+    }
+  }
+
+  // Convenience methods
+  async trackPageView(pageName?: string) {
+    await this.track("page_view", pageName || document.title, {
+      referrer: document.referrer,
+    });
+  }
+
+  async trackScriptGenerated(scriptId: string, theme: string, audience: string) {
+    await this.track("script_generated", "Script Generated", {
+      scriptId,
+      theme,
+      audience,
+    });
+  }
+
+  async trackVideoRecorded(duration: number, aspectRatio: string, recordTextInVideo: boolean) {
+    await this.track("video_recorded", "Video Recorded", {
+      duration,
+      aspectRatio,
+      recordTextInVideo,
+    });
+  }
+
+  async trackPostScheduled(platforms: string[], scheduledAt: string) {
+    await this.track("post_scheduled", "Post Scheduled", {
+      platforms,
+      scheduledAt,
+      platformCount: platforms.length,
+    });
+  }
+
+  async trackPostPublished(platform: string, postId: string) {
+    await this.track("post_published", "Post Published", {
+      platform,
+      postId,
+    });
+  }
+
+  async trackAssistantInteraction(action: string, context?: Record<string, any>) {
+    await this.track("assistant_interaction", `Assistant: ${action}`, {
+      action,
+      ...context,
+    });
+  }
+
+  async trackError(errorMessage: string, errorStack?: string, context?: Record<string, any>) {
+    await this.track("error", errorMessage, {
+      errorStack,
+      ...context,
+    });
+  }
+
+  async trackFrictionPoint(point: string, context?: Record<string, any>) {
+    await this.track("friction_point", point, context);
+  }
+
+  async trackFeatureUsed(featureName: string, context?: Record<string, any>) {
+    await this.track("feature_used", featureName, context);
+  }
+
+  async trackUserAction(actionName: string, context?: Record<string, any>) {
+    await this.track("user_action", actionName, context);
+  }
+
+  // Performance tracking
+  async trackPerformance(metricName: string, value: number, context?: Record<string, any>) {
+    await this.track("feature_used", `Performance: ${metricName}`, context, {
+      [metricName]: value,
+    });
+  }
+
+  // Cleanup
+  destroy() {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+    }
+    this.flush(true);
+  }
 }
 
-/**
- * Mocked data helpers (used when no published posts exist)
- */
-export const MOCK_METRICS = {
-  reach: 125400,
-  engagement: 0.082,
-  posts: 12,
-  followers: 2400,
-  likes: 8300,
-  comments: 456,
-  growth: {
-    reach: 0.125,
-    engagement: 0.013,
-    posts: -0.02,
-    followers: 0.058,
-    likes: 0.081,
-    comments: 0.12,
-  },
+// Singleton instance
+export const analytics = new AnalyticsService();
+
+// React hook for analytics
+export const useAnalytics = () => {
+  return {
+    trackPageView: analytics.trackPageView.bind(analytics),
+    trackScriptGenerated: analytics.trackScriptGenerated.bind(analytics),
+    trackVideoRecorded: analytics.trackVideoRecorded.bind(analytics),
+    trackPostScheduled: analytics.trackPostScheduled.bind(analytics),
+    trackPostPublished: analytics.trackPostPublished.bind(analytics),
+    trackAssistantInteraction: analytics.trackAssistantInteraction.bind(analytics),
+    trackError: analytics.trackError.bind(analytics),
+    trackFrictionPoint: analytics.trackFrictionPoint.bind(analytics),
+    trackFeatureUsed: analytics.trackFeatureUsed.bind(analytics),
+    trackUserAction: analytics.trackUserAction.bind(analytics),
+    trackPerformance: analytics.trackPerformance.bind(analytics),
+  };
 };
-
-export const MOCK_TREND = [
-  { date: "01/02", engagement: 5.2, reach: 12000 },
-  { date: "02/02", engagement: 6.1, reach: 15000 },
-  { date: "03/02", engagement: 5.8, reach: 13500 },
-  { date: "04/02", engagement: 7.3, reach: 18000 },
-  { date: "05/02", engagement: 6.9, reach: 16500 },
-  { date: "06/02", engagement: 8.1, reach: 21000 },
-  { date: "07/02", engagement: 8.2, reach: 22000 },
-];
-
-export const MOCK_TOP_POSTS = [
-  {
-    id: "mock-1",
-    rank: 1,
-    platform: "instagram",
-    publishedAt: "2025-01-15T18:30:00Z",
-    thumbnailUrl: "https://via.placeholder.com/240x135.png?text=Thumb+1",
-    description: "Você sabia? 80% das brasileiras têm deficiência de vitamina D...",
-    metrics: {
-      views: 45200,
-      likes: 3800,
-      comments: 1200,
-      shares: 890,
-      engagementRate: 0.124,
-    },
-    postUrl: "https://instagram.com/p/mock1",
-  },
-  {
-    id: "mock-2",
-    rank: 2,
-    platform: "tiktok",
-    publishedAt: "2025-01-12T11:00:00Z",
-    thumbnailUrl: "https://via.placeholder.com/240x135.png?text=Thumb+2",
-    description: "Gente, esse truque mudou minha pele...",
-    metrics: {
-      views: 38700,
-      likes: 2900,
-      comments: 890,
-      shares: 320,
-      engagementRate: 0.118,
-    },
-    postUrl: "https://tiktok.com/@mock2",
-  },
-];
-
-export const MOCK_BEST_TIMES = [
-  { day: "Terça-feira", timeRange: "18h - 20h", engagement: 8.9, rank: 1 },
-  { day: "Quinta-feira", timeRange: "18h - 20h", engagement: 8.5, rank: 2 },
-  { day: "Quarta-feira", timeRange: "11h - 13h", engagement: 7.8, rank: 3 },
-];

@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS organizations (
     metricool_user_id TEXT,
     metricool_blog_id INTEGER,
     heygen_api_key TEXT,
-    opusclip_api_key TEXT,
+    
+    -- Onboarding
+    onboarding_completed BOOLEAN DEFAULT FALSE,
     
     -- Metadata
     created_at TIMESTAMPTZ DEFAULT NOW(),

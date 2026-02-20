@@ -18,12 +18,23 @@ class Settings(BaseSettings):
     deepgram_api_key: str | None = Field(None, env="DEEPGRAM_API_KEY")
     whisper_model: str = Field("base", env="WHISPER_MODEL")
     
-    # Metricool (system-level credentials)
-    metricool_user_token: str | None = Field(None, env="METRICOOL_USER_TOKEN")
-    metricool_user_id: str | None = Field(None, env="METRICOOL_USER_ID")
-    
     # Encryption
     encryption_key: str = Field(..., env="ENCRYPTION_KEY")
+    
+    # Webhook Secrets
+    heygen_webhook_secret: str | None = Field(None, env="HEYGEN_WEBHOOK_SECRET")
+    
+    # Redis (for rate limiting and caching)
+    redis_host: str = Field("localhost", env="REDIS_HOST")
+    redis_port: int = Field(6379, env="REDIS_PORT")
+    redis_db: int = Field(0, env="REDIS_DB")
+    redis_password: str | None = Field(None, env="REDIS_PASSWORD")
+    
+    def get_redis_url(self) -> str:
+        """Retorna URL de conexão do Redis"""
+        if self.redis_password:
+            return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
     
     # CORS
     frontend_url: str = Field("https://renum.vercel.app", env="FRONTEND_URL")
@@ -47,6 +58,37 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+    
+    def get_cors_origins(self) -> list[str]:
+        """
+        Retorna lista de origens permitidas baseado no ambiente.
+        NUNCA retorna ["*"] para evitar vulnerabilidades de segurança.
+        """
+        # Se allowed_origins foi configurada, usar ela
+        if self.allowed_origins:
+            return self.allowed_origins if isinstance(self.allowed_origins, list) else []
+        
+        # Caso contrário, usar origens padrão baseadas no ambiente
+        if self.environment == "production":
+            return [
+                "https://renum.app",
+                "https://app.renum.com",
+                "https://www.renum.com",
+                "https://renum.vercel.app",
+            ]
+        elif self.environment == "staging":
+            return [
+                "https://staging.renum.app",
+                "https://renum-staging.vercel.app",
+                "http://localhost:5173",
+            ]
+        else:  # development
+            return [
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:3000",
+            ]
     
     class Config:
         env_file = ".env"

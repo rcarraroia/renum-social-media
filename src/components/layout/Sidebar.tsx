@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { useSidebar } from "@/hooks/useSidebar";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const LinkItem: React.FC<{ to: string; children: React.ReactNode; badge?: React.ReactNode }> = ({ to, children, badge }) => {
   return (
@@ -8,7 +9,7 @@ const LinkItem: React.FC<{ to: string; children: React.ReactNode; badge?: React.
       to={to}
       end={false}
       className={({ isActive }) =>
-        `block px-3 py-2 rounded-md transition-colors min-h-[44px] flex items-center ${isActive ? "bg-indigo-600 text-white" : "text-slate-700 hover:bg-slate-100"}`
+        `block px-4 py-3 rounded-md transition-colors min-h-[56px] flex items-center text-base ${isActive ? "bg-indigo-600 text-white" : "text-slate-700 hover:bg-slate-100"}`
       }
     >
       <div className="flex items-center justify-between w-full">
@@ -21,6 +22,17 @@ const LinkItem: React.FC<{ to: string; children: React.ReactNode; badge?: React.
 
 const Sidebar: React.FC = () => {
   const { isOpen, close } = useSidebar();
+  const sidebarRef = React.useRef<HTMLElement>(null);
+
+  // Swipe left to close sidebar on mobile
+  useSwipeGesture(sidebarRef, {
+    onSwipeLeft: () => {
+      if (isOpen) {
+        close();
+      }
+    },
+    threshold: 50,
+  });
 
   return (
     <>
@@ -35,6 +47,7 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={[
           "fixed top-16 left-0 bottom-0 bg-white z-40 transition-transform duration-300 ease-in-out w-64 overflow-y-auto",
           isOpen ? "translate-x-0" : "-translate-x-full",

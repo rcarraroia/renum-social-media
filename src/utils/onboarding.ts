@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Checks whether onboarding is completed for the given user id.
- * First it looks at localStorage then checks if organization has metricool_user_token configured.
+ * First it looks at localStorage then checks if organization has onboarding_completed flag.
  */
 export async function hasCompletedOnboarding(userId?: string, organizationId?: string) {
   if (!userId) return false;
@@ -14,7 +14,7 @@ export async function hasCompletedOnboarding(userId?: string, organizationId?: s
   // cast response to any to avoid strict typing mismatch from supabase client generics
   const res: any = await supabase
     .from("organizations")
-    .select("metricool_user_token")
+    .select("onboarding_completed")
     .eq("id", organizationId)
     .maybeSingle();
 
@@ -24,14 +24,28 @@ export async function hasCompletedOnboarding(userId?: string, organizationId?: s
   }
 
   const data = res?.data ?? null;
-  return Boolean(data?.metricool_user_token);
+  return Boolean(data?.onboarding_completed);
 }
 
-export function markOnboardingComplete(userId: string, preferredModule?: string) {
+export function markOnboardingComplete(userId: string, organizationId?: string, preferredModule?: string) {
   localStorage.setItem(`onboarding_completed_${userId}`, "true");
   localStorage.setItem(`onboarding_completed_at`, new Date().toISOString());
   if (preferredModule) {
     localStorage.setItem(`preferred_module_${userId}`, preferredModule);
+  }
+  
+  // Atualizar flag no banco de dados se organizationId fornecido
+  if (organizationId) {
+    supabase
+      .from("organizations")
+      .update({ onboarding_completed: true })
+      .eq("id", organizationId)
+      .then(() => {
+        console.log("Onboarding marcado como completo no banco de dados");
+      })
+      .catch((error) => {
+        console.error("Erro ao atualizar onboarding no banco:", error);
+      });
   }
 }
 

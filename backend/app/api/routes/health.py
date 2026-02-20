@@ -46,6 +46,34 @@ async def health_check():
     elif settings.deepgram_api_key:
         whisper_status = "using_deepgram"
     
+    # Check Redis connection
+    redis_status = "not_configured"
+    if settings.redis_host:
+        try:
+            import redis
+            r = redis.Redis(
+                host=settings.redis_host,
+                port=settings.redis_port,
+                db=settings.redis_db,
+                password=settings.redis_password,
+                socket_connect_timeout=2
+            )
+            r.ping()
+            redis_status = "connected"
+        except ImportError:
+            redis_status = "not_installed"
+        except Exception:
+            redis_status = "error"
+    
+    # Check Tavily configuration
+    tavily_status = "configured" if settings.tavily_api_key else "not_configured"
+    
+    # Check Claude configuration
+    claude_status = "configured" if settings.anthropic_api_key else "not_configured"
+    
+    # Check HeyGen webhook configuration
+    heygen_webhook_status = "configured" if settings.heygen_webhook_secret else "not_configured"
+    
     overall_status = "ok" if ffmpeg_status == "available" and supabase_status == "connected" else "degraded"
     
     return {
@@ -57,7 +85,11 @@ async def health_check():
         "services": {
             "supabase": supabase_status,
             "ffmpeg": ffmpeg_status,
-            "transcription": whisper_status
+            "transcription": whisper_status,
+            "redis": redis_status,
+            "tavily": tavily_status,
+            "claude": claude_status,
+            "heygen_webhook": heygen_webhook_status
         }
     }
 

@@ -83,6 +83,7 @@ const Module3Page: React.FC = () => {
   const [testMode, setTestMode] = useState(false);
   const [testStep, setTestStep] = useState(1);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [testVideoUrl, setTestVideoUrl] = useState<string | null>(null);
 
   // For testing: override the hook's state with local test state
   const effectiveInput = testMode ? testStep === 1 : input;
@@ -91,6 +92,7 @@ const Module3Page: React.FC = () => {
   const effectiveGenerating = testMode ? testStep === 4 : generating;
   const effectiveReady = testMode ? testStep === 5 : ready;
   const effectiveSchedule = testMode ? testStep === 6 : (ready && showSchedule);
+  const effectiveVideoUrl = testMode && testVideoUrl ? testVideoUrl : videoUrl;
 
   // For testing: load sample script
   const loadSampleForTesting = () => {
@@ -112,7 +114,7 @@ const Module3Page: React.FC = () => {
     }
     if (step >= 5) {
       // Add test video URL for step 5+
-      (videoUrl as any) = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+      setTestVideoUrl("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
     }
     if (step === 6) {
       setShowSchedule(true);
@@ -158,9 +160,9 @@ const Module3Page: React.FC = () => {
   };
 
   const handleSendToPostRapido = () => {
-    if (!videoUrl) return;
+    if (!effectiveVideoUrl) return;
     navigate("/module-2/post-rapido", {
-      state: { videoUrl, scriptId: null, source: "heygen" },
+      state: { videoUrl: effectiveVideoUrl, scriptId: null, source: "heygen" },
     });
   };
 
@@ -169,7 +171,7 @@ const Module3Page: React.FC = () => {
     scheduledAt?: string;
     descriptions: Record<string, string>;
   }) => {
-    if (!videoUrl || !user?.id) {
+    if (!effectiveVideoUrl || !user?.id) {
       showError("Vídeo ou usuário não encontrado");
       return;
     }
@@ -182,7 +184,7 @@ const Module3Page: React.FC = () => {
         user_id: user.id,
         platform,
         content: config.descriptions[platform] || script || "",
-        media_url: videoUrl,
+        media_url: effectiveVideoUrl,
         media_type: "video" as const,
         aspect_ratio: aspectRatio || "9:16",
         status: config.mode === "now" ? ("published" as const) : ("scheduled" as const),
@@ -427,12 +429,12 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {effectiveReady && videoUrl && !effectiveSchedule && (
+        {effectiveReady && effectiveVideoUrl && !effectiveSchedule && (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold">PASSO 5: Resultado</h3>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <video src={videoUrl} controls autoPlay muted className="w-full rounded" />
+                <video src={effectiveVideoUrl} controls autoPlay muted className="w-full rounded" />
               </div>
 
               <div>
@@ -447,7 +449,7 @@ const Module3Page: React.FC = () => {
                     📅 Agendar Posts →
                   </button>
                   <button onClick={() => handleSendToPostRapido()} className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">Enviar para PostRápido</button>
-                  <a href={videoUrl} download className="px-3 py-2 rounded bg-gray-100 text-center hover:bg-gray-200">Download</a>
+                  <a href={effectiveVideoUrl} download className="px-3 py-2 rounded bg-gray-100 text-center hover:bg-gray-200">Download</a>
                   <button onClick={() => reset()} className="px-3 py-2 rounded bg-white border hover:bg-gray-50">Gerar Novo</button>
                 </div>
               </div>
@@ -455,7 +457,7 @@ const Module3Page: React.FC = () => {
           </div>
         )}
 
-        {effectiveSchedule && videoUrl && (
+        {effectiveSchedule && effectiveVideoUrl && (
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold mb-4">PASSO 6: Agendar Posts</h3>
             <ScheduleStep

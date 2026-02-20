@@ -4,6 +4,7 @@ import "./globals.css";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthStore } from "@/stores/authStore";
+import { registerServiceWorker } from "@/utils/registerServiceWorker";
 
 // Initialize supabase listener to react to auth changes
 function SupabaseAuthListener() {
@@ -32,14 +33,5 @@ createRoot(document.getElementById("root")!).render(
   </>,
 );
 
-// Register service worker (if available)
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .catch((err) => {
-        // registration failed
-        // console.warn("Service worker registration failed:", err);
-      });
-  });
-}
+// Register service worker for PWA and offline support
+registerServiceWorker();
