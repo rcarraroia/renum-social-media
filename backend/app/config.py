@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     
     def get_redis_url(self) -> str:
         """Retorna URL de conexão do Redis"""
-        if self.redis_password:
+        # Ignorar senha se for None ou string vazia
+        if self.redis_password and self.redis_password.strip():
             return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
     
