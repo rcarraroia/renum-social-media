@@ -66,7 +66,11 @@ class Settings(BaseSettings):
         """
         # Se allowed_origins foi configurada, usar ela
         if self.allowed_origins:
-            return self.allowed_origins if isinstance(self.allowed_origins, list) else []
+            # allowed_origins já é uma lista após o field_validator
+            if isinstance(self.allowed_origins, list):
+                return self.allowed_origins
+            # Fallback se por algum motivo ainda for string
+            return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
         
         # Caso contrário, usar origens padrão baseadas no ambiente
         if self.environment == "production":
