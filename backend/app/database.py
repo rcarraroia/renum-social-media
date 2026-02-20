@@ -82,3 +82,27 @@ async def get_db() -> AsyncGenerator[AsyncSupabaseSession, None]:
     finally:
         # Cleanup se necessário
         pass
+
+
+async def get_organization_by_user_id(user_id: str) -> str | None:
+    """
+    Busca o ID da organização associada a um usuário
+    
+    Args:
+        user_id: ID do usuário no Supabase Auth
+    
+    Returns:
+        ID da organização ou None se não encontrado
+    """
+    import asyncio
+    
+    def _sync_query():
+        result = supabase.table("organizations").select("id").eq("owner_id", user_id).single().execute()
+        return result
+    
+    try:
+        result = await asyncio.to_thread(_sync_query)
+        data = result.data if hasattr(result, "data") else result.get("data")
+        return data.get("id") if data else None
+    except Exception:
+        return None
