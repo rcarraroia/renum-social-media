@@ -405,6 +405,503 @@ para o teste passar"
 
 ---
 
+## 🧰 FERRAMENTAS DISPONÍVEIS PARA EXECUÇÃO DE TAREFAS
+
+### **IMPORTANTE: SEMPRE CONSULTE ESTAS FERRAMENTAS ANTES DE INICIAR QUALQUER TAREFA**
+
+Esta seção lista TODAS as ferramentas, agentes, workflows, skills e powers disponíveis para você executar tarefas de forma eficiente e profissional.
+
+---
+
+## 📦 KIRO POWERS (MCP SERVERS)
+
+### **REGRA CRÍTICA: SEMPRE VERIFIQUE OS POWERS DISPONÍVEIS**
+
+Você tem acesso a vários Powers (MCP Servers) que fornecem funcionalidades especializadas. **SEMPRE consulte os powers disponíveis ANTES de implementar soluções manualmente.**
+
+### **Powers Instalados:**
+
+#### **1. Supabase Power** 🔥 **MAIS IMPORTANTE**
+**Keywords:** database, postgres, auth, storage, realtime, backend, supabase, rls
+
+**Quando usar:**
+- ✅ Consultar schema do banco de dados
+- ✅ Executar queries SQL
+- ✅ Verificar políticas RLS
+- ✅ Listar tabelas e colunas
+- ✅ Validar estrutura do banco ANTES de qualquer análise/auditoria
+
+**Como ativar:**
+```
+Usar kiroPowers tool com action="activate" e powerName="supabase-hosted"
+```
+
+**REGRA OBRIGATÓRIA (do AGENTS.md):**
+- SEMPRE usar Supabase Power para análise de banco
+- NUNCA confiar apenas em arquivos de migration
+- SEMPRE validar schema real antes de auditorias
+
+#### **2. Vercel Power**
+**Keywords:** vercel, deploy, deployment, hosting, serverless
+
+**Quando usar:**
+- ✅ Listar projetos Vercel
+- ✅ Verificar deployments
+- ✅ Consultar logs de build/runtime
+- ✅ Obter informações de domínios
+
+#### **3. Stripe Power**
+**Keywords:** stripe, payments, checkout, subscriptions, billing
+
+**Quando usar:**
+- ✅ Gerenciar pagamentos
+- ✅ Criar/listar produtos
+- ✅ Gerenciar assinaturas
+- ✅ Processar refunds
+
+#### **4. Postman Power**
+**Keywords:** postman, api, testing, collections, rest, http
+
+**Quando usar:**
+- ✅ Testar APIs
+- ✅ Criar coleções de testes
+- ✅ Gerenciar ambientes de teste
+
+#### **5. Tavily Power**
+**Keywords:** search, web, research, crawl, extract
+
+**Quando usar:**
+- ✅ Buscar informações na web
+- ✅ Extrair conteúdo de URLs
+- ✅ Fazer pesquisas especializadas
+
+#### **6. HeyGen Power**
+**Keywords:** heygen, video, avatar, ai-video
+
+**Quando usar:**
+- ✅ Gerar vídeos com avatares
+- ✅ Consultar créditos HeyGen
+- ✅ Listar avatares/vozes disponíveis
+
+---
+
+## 🤖 AGENTES ESPECIALIZADOS
+
+**Localização:** `.context/agents/`
+
+Agentes são personas especializadas com conhecimento profundo em áreas específicas. Use-os como referência ou delegue tarefas complexas.
+
+### **Lista de Agentes Disponíveis:**
+
+1. **architect-specialist.md**
+   - Arquitetura de software
+   - Design de sistemas
+   - Padrões arquiteturais
+
+2. **backend-specialist.md**
+   - APIs REST/GraphQL
+   - Lógica de negócio
+   - Integrações backend
+
+3. **bug-fixer.md**
+   - Debugging sistemático
+   - Correção de bugs
+   - Análise de root cause
+
+4. **code-reviewer.md**
+   - Revisão de código
+   - Qualidade de código
+   - Best practices
+
+5. **database-specialist.md**
+   - Schema design
+   - Queries SQL
+   - Otimização de banco
+
+6. **devops-specialist.md**
+   - CI/CD
+   - Docker/Kubernetes
+   - Deploy e infraestrutura
+
+7. **documentation-writer.md**
+   - Documentação técnica
+   - READMEs
+   - Guias de uso
+
+8. **feature-developer.md** ⭐
+   - Desenvolvimento end-to-end
+   - UI → Services → Integration
+   - Padrão principal do projeto
+
+9. **frontend-specialist.md**
+   - React/TypeScript
+   - UI/UX
+   - State management
+
+10. **mobile-specialist.md**
+    - Apps mobile
+    - Responsive design
+    - PWA
+
+11. **performance-optimizer.md**
+    - Otimização de performance
+    - Profiling
+    - Caching
+
+12. **refactoring-specialist.md**
+    - Refatoração de código
+    - Clean code
+    - Melhoria de arquitetura
+
+13. **security-auditor.md**
+    - Auditoria de segurança
+    - Vulnerabilidades
+    - Best practices de segurança
+
+14. **test-writer.md**
+    - Testes unitários
+    - Testes de integração
+    - TDD/BDD
+
+**Como usar:**
+```markdown
+Consulte `.context/agents/[nome-do-agente].md` para obter orientações específicas
+```
+
+---
+
+## 🔄 WORKFLOWS DISPONÍVEIS
+
+**Localização:** `.agent/workflows/`
+
+Workflows são comandos especializados que ativam modos específicos de trabalho.
+
+### **Lista de Workflows:**
+
+1. **brainstorm.md**
+   - Geração de ideias
+   - Exploração de soluções
+   - Análise de alternativas
+
+2. **create.md**
+   - Criação de novos recursos
+   - Scaffolding de código
+   - Geração de estruturas
+
+3. **debug.md** ⭐
+   - Debugging sistemático
+   - Investigação de problemas
+   - Root cause analysis
+
+4. **deploy.md**
+   - Preparação para deploy
+   - Validação pré-deploy
+   - Checklist de deploy
+
+5. **enhance.md**
+   - Melhorias de código
+   - Otimizações
+   - Refatorações
+
+6. **orchestrate.md**
+   - Coordenação de tarefas
+   - Planejamento de execução
+   - Delegação de trabalho
+
+7. **plan.md**
+   - Planejamento de features
+   - Análise de requisitos
+   - Definição de escopo
+
+8. **preview.md**
+   - Visualização de mudanças
+   - Review de código
+   - Validação de implementação
+
+9. **status.md**
+   - Status de tarefas
+   - Progresso de features
+   - Relatórios
+
+10. **test.md**
+    - Execução de testes
+    - Criação de testes
+    - Validação de qualidade
+
+11. **ui-ux-pro-max.md**
+    - Design UI/UX avançado
+    - Padrões de interface
+    - Acessibilidade
+
+**Como usar:**
+```markdown
+Leia `.agent/workflows/[nome-do-workflow].md` para ativar o modo específico
+```
+
+---
+
+## 🎯 SKILLS DISPONÍVEIS
+
+**Localização:** `.agent/skills/` e `.agents/skills/`
+
+Skills são metodologias e técnicas especializadas que você pode ativar para executar tarefas específicas.
+
+### **Lista de Skills:**
+
+1. **systematic-debugging/** ⭐
+   - Metodologia de 4 fases
+   - Root cause analysis
+   - Debugging estruturado
+   - **Use quando:** enfrentar bugs complexos
+
+2. **tailwind-patterns/**
+   - Padrões Tailwind CSS
+   - Design system
+   - Componentes estilizados
+   - **Use quando:** trabalhar com UI/CSS
+
+3. **tdd-workflow/**
+   - Test-Driven Development
+   - Red-Green-Refactor
+   - Testes primeiro
+   - **Use quando:** criar features com TDD
+
+4. **testing-patterns/**
+   - Padrões de teste
+   - Mocks e stubs
+   - Test fixtures
+   - **Use quando:** escrever testes
+
+5. **vulnerability-scanner/**
+   - Scan de vulnerabilidades
+   - Análise de segurança
+   - Checklists de segurança
+   - **Use quando:** fazer auditorias de segurança
+
+6. **web-design-guidelines/**
+   - Guidelines de design
+   - Acessibilidade
+   - UX best practices
+   - **Use quando:** criar/revisar UI
+
+7. **webapp-testing/**
+   - Testes E2E
+   - Playwright
+   - Testes de integração
+   - **Use quando:** testar aplicação completa
+
+8. **ui-ux-pro-max/** (em `.agents/skills/`)
+   - Design UI/UX avançado
+   - Padrões modernos
+   - Acessibilidade WCAG
+   - **Use quando:** criar interfaces profissionais
+
+**Como ativar:**
+```markdown
+Leia `.agent/skills/[nome-do-skill]/SKILL.md` para ativar a metodologia
+```
+
+---
+
+## 📚 DOCUMENTAÇÃO DO PROJETO
+
+**Localização:** `.context/docs/`
+
+Documentação centralizada sobre o projeto RENUM.
+
+### **Documentos Disponíveis:**
+
+1. **architecture.md**
+   - Arquitetura do sistema
+   - Componentes principais
+   - Fluxo de dados
+
+2. **codebase-map.json**
+   - Mapa do código
+   - Estrutura de diretórios
+   - Dependências
+
+3. **data-flow.md**
+   - Fluxo de dados
+   - Integrações
+   - APIs
+
+4. **development-workflow.md**
+   - Workflow de desenvolvimento
+   - Git flow
+   - Processo de PR
+
+5. **glossary.md**
+   - Glossário de termos
+   - Definições
+   - Convenções
+
+6. **project-overview.md**
+   - Visão geral do projeto
+   - Objetivos
+   - Roadmap
+
+7. **security.md**
+   - Práticas de segurança
+   - Políticas
+   - Compliance
+
+8. **testing-strategy.md**
+   - Estratégia de testes
+   - Tipos de testes
+   - Cobertura
+
+9. **tooling.md**
+   - Ferramentas utilizadas
+   - Configurações
+   - Setup
+
+---
+
+## 🎬 PROCESSO DE EXECUÇÃO DE TAREFAS
+
+### **ANTES DE INICIAR QUALQUER TAREFA:**
+
+1. **Consulte os Powers disponíveis**
+   - Especialmente Supabase Power para tarefas de banco
+   - Vercel Power para tarefas de deploy
+   - Tavily Power para pesquisas
+
+2. **Identifique o agente apropriado**
+   - Backend? → `backend-specialist.md`
+   - Frontend? → `frontend-specialist.md`
+   - Bug? → `bug-fixer.md`
+   - Deploy? → `devops-specialist.md`
+
+3. **Ative o workflow correto**
+   - Debugging? → `debug.md`
+   - Nova feature? → `create.md`
+   - Deploy? → `deploy.md`
+
+4. **Use o skill apropriado**
+   - Bug complexo? → `systematic-debugging`
+   - Auditoria? → `vulnerability-scanner`
+   - Testes? → `testing-patterns`
+
+5. **Consulte a documentação**
+   - Arquitetura? → `.context/docs/architecture.md`
+   - Fluxo de dados? → `.context/docs/data-flow.md`
+
+---
+
+## ⚠️ LEMBRETES CRÍTICOS
+
+### **SUPABASE POWER - NUNCA ESQUEÇA!**
+
+```
+❌ ERRADO: Analisar banco apenas olhando arquivos de migration
+✅ CORRETO: Usar Supabase Power para consultar schema real
+
+❌ ERRADO: Assumir estrutura do banco
+✅ CORRETO: Validar com list_tables e execute_sql
+
+❌ ERRADO: Confiar em documentação desatualizada
+✅ CORRETO: Consultar banco real via Power
+```
+
+### **SYSTEMATIC DEBUGGING - USE SEMPRE!**
+
+```
+❌ ERRADO: Tentar correções aleatórias
+✅ CORRETO: Seguir metodologia de 4 fases
+
+❌ ERRADO: Comentar código para fazer funcionar
+✅ CORRETO: Identificar root cause e corrigir
+
+❌ ERRADO: Assumir causa do problema
+✅ CORRETO: Investigar com evidências
+```
+
+### **FEATURE DEVELOPER - PADRÃO DO PROJETO**
+
+```
+❌ ERRADO: Criar arquitetura nova
+✅ CORRETO: Seguir padrões existentes em feature-developer.md
+
+❌ ERRADO: Duplicar código
+✅ CORRETO: Reutilizar componentes UI existentes
+
+❌ ERRADO: Lógica de negócio na UI
+✅ CORRETO: Manter em src/services/
+```
+
+---
+
+## 📖 EXEMPLOS DE USO
+
+### **Exemplo 1: Auditoria de Segurança**
+
+```markdown
+1. Ativar Supabase Power
+   → Consultar schema real do banco
+   → Verificar políticas RLS
+
+2. Consultar vulnerability-scanner skill
+   → Seguir checklist de segurança
+   → Aplicar metodologia de scan
+
+3. Consultar security-auditor agent
+   → Seguir padrões de auditoria
+   → Gerar relatório estruturado
+```
+
+### **Exemplo 2: Correção de Bug Complexo**
+
+```markdown
+1. Ativar debug workflow
+   → Entrar em modo de debugging
+
+2. Usar systematic-debugging skill
+   → Fase 1: Reproduzir
+   → Fase 2: Isolar
+   → Fase 3: Entender (root cause)
+   → Fase 4: Corrigir e verificar
+
+3. Consultar bug-fixer agent
+   → Seguir best practices de correção
+```
+
+### **Exemplo 3: Nova Feature End-to-End**
+
+```markdown
+1. Consultar feature-developer agent
+   → Entender padrões do projeto
+   → Identificar arquivos a modificar
+
+2. Ativar create workflow
+   → Modo de criação de features
+
+3. Seguir estrutura:
+   → Services em src/services/
+   → UI em src/components/
+   → Reutilizar primitives de src/components/ui/
+```
+
+### **Exemplo 4: Deploy no Easypanel**
+
+```markdown
+1. Ativar deploy workflow
+   → Modo de preparação para deploy
+
+2. Consultar devops-specialist agent
+   → Seguir checklist de deploy
+
+3. Usar Vercel Power (se aplicável)
+   → Verificar variáveis de ambiente
+   → Consultar logs de deploy
+
+4. Validar com Supabase Power
+   → Confirmar schema do banco
+   → Verificar políticas RLS
+```
+
+---
+
 **Data de Criação:** 15/02/2026  
 **Última Atualização:** 20/02/2026  
 **Status:** ATIVO E OBRIGATÓRIO  
