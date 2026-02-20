@@ -64,7 +64,7 @@ class Settings(BaseSettings):
         Retorna lista de origens permitidas baseado no ambiente.
         NUNCA retorna ["*"] para evitar vulnerabilidades de segurança.
         """
-        # Se allowed_origins foi configurada, usar ela
+        # SEMPRE priorizar ALLOWED_ORIGINS se foi configurada
         if self.allowed_origins:
             # allowed_origins já é uma lista após o field_validator
             if isinstance(self.allowed_origins, list):
