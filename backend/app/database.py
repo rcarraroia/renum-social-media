@@ -106,3 +106,49 @@ async def get_organization_by_user_id(user_id: str) -> str | None:
         return data.get("id") if data else None
     except Exception:
         return None
+
+
+async def log_api_call(
+    org_id: str,
+    module: str,
+    endpoint: str,
+    method: str,
+    request_data: dict,
+    response_data: dict,
+    status_code: int,
+    duration_ms: int
+) -> None:
+    """
+    Registra chamada de API na tabela api_logs
+    
+    Args:
+        org_id: ID da organização
+        module: Nome do módulo (ex: "module2")
+        endpoint: Endpoint da API (ex: "/upload")
+        method: Método HTTP (ex: "POST")
+        request_data: Dados da requisição
+        response_data: Dados da resposta
+        status_code: Código de status HTTP
+        duration_ms: Duração da chamada em milissegundos
+    """
+    import asyncio
+    from datetime import datetime
+    
+    def _sync_log():
+        try:
+            supabase.table("api_logs").insert({
+                "org_id": org_id,
+                "module": module,
+                "endpoint": endpoint,
+                "method": method,
+                "request_data": request_data,
+                "response_data": response_data,
+                "status_code": status_code,
+                "duration_ms": duration_ms,
+                "created_at": datetime.utcnow().isoformat()
+            }).execute()
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"Error logging API call: {e}")
+    
+    await asyncio.to_thread(_sync_log)
