@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    labels:
+      - "easypanel.port=8000"
     environment:
       # Python Path
       - PYTHONPATH=/app
@@ -48,8 +50,6 @@ services:
       - TEMP_VIDEO_PATH=/tmp/videos
     volumes:
       - video-temp:/tmp/videos
-    ports:
-      - "8000:8000"
     depends_on:
       redis:
         condition: service_healthy
