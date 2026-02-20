@@ -563,3 +563,117 @@ async def get_platform_breakdown(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao buscar breakdown de plataformas"
         )
+
+
+
+@router.get("/api/dashboard/stats")
+async def get_dashboard_stats(
+    org_id: str = Depends(get_current_organization)
+):
+    """
+    Retorna estatísticas consolidadas para o dashboard.
+    
+    Calcula:
+    - Total de scripts gerados
+    - Vídeos publicados
+    - Agendamentos pendentes
+    - Crescimento percentual vs mês anterior
+    
+    Args:
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "scripts_generated": 42,
+            "videos_published": 15,
+            "pending_scheduled": 8,
+            "growth_percentage": 23.5
+        }
+    
+    Validates: Requirements 14.1
+    """
+    logger.info(
+        "Getting dashboard stats",
+        extra={
+            "organization_id": org_id,
+            "endpoint": "get_dashboard_stats"
+        }
+    )
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        # Calcular datas
+        now = datetime.utcnow()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_last_month = (start_of_month - timedelta(days=1)).replace(day=1)
+        
+        # Contar scripts gerados (vídeos com recording_source='script')
+        def _count_scripts():
+            return supabase.table("videos").select(
+                "id", count="exact"
+            ).eq("organization_id", org_id).eq(
+                "recording_source", "script"
+            ).gte("created_at", start_of_month.isoformat()).execute()
+        
+        scripts_result = await asyncio.to_thread(_count_scripts)
+        scripts_generated = scripts_result.count if hasattr(scripts_result, "count") else 0
+        
+        # Contar vídeos publicados (status='ready')
+        def _count_videos():
+            return supabase.table("videos").select(
+                "id", count="exact"
+            ).eq("organization_id", org_id).eq(
+                "status", "ready"
+            ).gte("created_at", start_of_month.isoformat()).execute()
+        
+        videos_result = await asyncio.to_thread(_count_videos)
+        videos_published = videos_result.count if hasattr(videos_result, "count") else 0
+        
+        # Contar agendamentos pendentes (posts com status='scheduled')
+        def _count_scheduled():
+            return supabase.table("posts").select(
+                "id", count="exact"
+            ).eq("organization_id", org_id).eq(
+                "status", "scheduled"
+            ).gte("scheduled_at", now.isoformat()).execute()
+        
+        scheduled_result = await asyncio.to_thread(_count_scheduled)
+        pending_scheduled = scheduled_result.count if hasattr(scheduled_result, "count") else 0
+        
+        # Calcular crescimento (comparar com mês anterior)
+        def _count_last_month():
+            return supabase.table("videos").select(
+                "id", count="exact"
+            ).eq("organization_id", org_id).eq(
+                "status", "ready"
+            ).gte("created_at", start_of_last_month.isoformat()).lt(
+                "created_at", start_of_month.isoformat()
+            ).execute()
+        
+        last_month_result = await asyncio.to_thread(_count_last_month)
+        last_month_videos = last_month_result.count if hasattr(last_month_result, "count") else 0
+        
+        # Calcular percentual de crescimento
+        if last_month_videos > 0:
+            growth_percentage = ((videos_published - last_month_videos) / last_month_videos) * 100
+        else:
+            growth_percentage = 100.0 if videos_published > 0 else 0.0
+        
+        return {
+            "scripts_generated": scripts_generated,
+            "videos_published": videos_published,
+            "pending_scheduled": pending_scheduled,
+            "growth_percentage": round(growth_percentage, 1)
+        }
+    
+    except Exception as e:
+        logger.error(
+            f"Error getting dashboard stats: {e}",
+            extra={"organization_id": org_id},
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao buscar estatísticas do dashboard"
+        )

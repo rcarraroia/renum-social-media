@@ -17,7 +17,8 @@ from app.api.routes import (
     module1, 
     leads,
     analytics,
-    assistant
+    assistant,
+    calendar
 )
 
 logger = setup_logger()
@@ -96,6 +97,7 @@ app.include_router(leads.router, prefix="/api", tags=["Leads"])
 app.include_router(module1.router, prefix="/api/scriptai", tags=["Module 1 - ScriptAI"])
 app.include_router(module2.router, prefix="/api/postrapido", tags=["Module 2 - PostRápido"])
 app.include_router(module3.router, prefix="/api/avatarai", tags=["Module 3 - AvatarAI"])
+app.include_router(calendar.router, prefix="/api/calendar", tags=["Calendar"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["Async Tasks"])
 
