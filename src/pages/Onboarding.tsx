@@ -41,6 +41,51 @@ const Onboarding: React.FC = () => {
   const orgId = user?.organization_id;
   const userId = user?.id;
 
+  // Função helper para atualizar step e persistir no banco
+  const updateStep = async (newStep: number) => {
+    setStep(newStep);
+    
+    if (!orgId) return;
+    
+    try {
+      await supabase
+        .from("organizations")
+        .update({ onboarding_step: newStep })
+        .eq("id", orgId);
+    } catch (err) {
+      console.error("Erro ao salvar progresso:", err);
+    }
+  };
+
+  // Restaurar progresso do onboarding ao carregar
+  useEffect(() => {
+    async function restoreProgress() {
+      if (!orgId) return;
+      
+      try {
+        const res: any = await supabase
+          .from("organizations")
+          .select("onboarding_step, professional_profiles")
+          .eq("id", orgId)
+          .single();
+        
+        if (res?.data) {
+          const savedStep = res.data.onboarding_step || 1;
+          setStep(savedStep);
+          
+          // Restaurar perfis se já foram salvos
+          if (res.data.professional_profiles && res.data.professional_profiles.length > 0) {
+            setSelectedProfiles(res.data.professional_profiles);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao restaurar progresso:", err);
+      }
+    }
+    
+    restoreProgress();
+  }, [orgId]);
+
   useEffect(() => {
     // init social account states (fetch from API or fallback)
     async function loadSocial() {
@@ -78,25 +123,15 @@ const Onboarding: React.FC = () => {
     try {
       const toastId = showLoading("Salvando perfis...");
       
-      console.log("[DEBUG] Salvando perfis:", {
-        orgId,
-        selectedProfiles,
-        payload: {
-          professional_profiles: selectedProfiles,
-          updated_at: new Date().toISOString(),
-        }
-      });
-      
       const res: any = await (supabase.from("organizations") as any)
         .update({
           professional_profiles: selectedProfiles,
+          onboarding_step: 2, // Avançar para passo 2
           updated_at: new Date().toISOString(),
         })
         .eq("id", orgId)
         .select()
         .single();
-      
-      console.log("[DEBUG] Resposta do Supabase:", res);
       
       dismissToast(toastId);
       if (res?.error) {
@@ -205,7 +240,7 @@ const Onboarding: React.FC = () => {
     const ok = await saveProfilesToOrg();
     if (!ok) return;
 
-    setStep(2);
+    await updateStep(2);
   };
 
   const finishOnboarding = () => {
@@ -260,7 +295,7 @@ const Onboarding: React.FC = () => {
               <div className="mt-6 flex justify-between">
                 <button onClick={() => navigate("/dashboard")} className="px-4 py-2 border rounded">Pular</button>
                 <div className="space-x-2">
-                  <button onClick={() => { setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]); setStep(2); }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
+                  <button onClick={() => { setSelectedProfiles(selectedProfiles.length ? selectedProfiles : ["general"]); updateStep(2); }} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
                   <button onClick={handleCompleteProfiles} className="px-4 py-2 bg-indigo-600 text-white rounded">Salvar e Continuar →</button>
                 </div>
               </div>
@@ -290,10 +325,10 @@ const Onboarding: React.FC = () => {
               </div>
 
               <div className="mt-6 flex justify-between">
-                <button onClick={() => setStep(1)} className="px-4 py-2 border rounded">← Voltar</button>
+                <button onClick={() => updateStep(1)} className="px-4 py-2 border rounded">← Voltar</button>
                 <div className="space-x-2">
-                  <button onClick={() => setStep(3)} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
-                  <button onClick={() => setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded">Continuar →</button>
+                  <button onClick={() => updateStep(3)} className="px-4 py-2 bg-gray-100 rounded">Pular</button>
+                  <button onClick={() => updateStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded">Continuar →</button>
                 </div>
               </div>
             </div>
@@ -308,7 +343,7 @@ const Onboarding: React.FC = () => {
                   <div className="text-sm text-slate-500 mt-2">Crie vídeos com avatar digital usando HeyGen. Faça upgrade para o Plano Pro para acessar.</div>
                   <div className="mt-4">
                     <button onClick={() => navigate("/settings?tab=plan")} className="px-4 py-2 bg-indigo-600 text-white rounded">Fazer Upgrade →</button>
-                    <button onClick={() => setStep(4)} className="ml-2 px-4 py-2 border rounded">Pular</button>
+                    <button onClick={() => updateStep(4)} className="ml-2 px-4 py-2 border rounded">Pular</button>
                   </div>
                 </div>
               ) : (
@@ -338,7 +373,7 @@ const Onboarding: React.FC = () => {
                     </button>
 
                     <button onClick={() => { alert("HeyGen wizard (placeholder)"); }} className="px-4 py-2 border rounded">Como obter essas informações?</button>
-                    <button onClick={() => setStep(4)} className="ml-auto px-4 py-2 border rounded">Pular</button>
+                    <button onClick={() => updateStep(4)} className="ml-auto px-4 py-2 border rounded">Pular</button>
                   </div>
                 </div>
               )}
