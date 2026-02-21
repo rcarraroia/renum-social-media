@@ -34,19 +34,15 @@ Esta spec define a integração do OpenRouter como provedor unificado de modelos
 - Sistema DEVE permitir configurar modelo específico para ScriptAI via `OPENROUTER_SCRIPT_MODEL`
 - Sistema DEVE permitir configurar modelo específico para PostRápido via `OPENROUTER_DESCRIPTION_MODEL`
 - Sistema DEVE permitir configurar modelo específico para AI Assistant via `OPENROUTER_ASSISTANT_MODEL`
-- Sistema DEVE usar valores padrão se variáveis não forem configuradas:
-  - Script: `anthropic/claude-sonnet-4`
-  - Description: `anthropic/claude-sonnet-4`
-  - Assistant: `google/gemini-2.0-flash-exp`
+- Sistema DEVE retornar erro claro se variáveis não forem configuradas (não há valores padrão)
+- A escolha de modelos será feita pelo administrador via painel admin (ainda não desenvolvido)
 
 #### RF1.4: Fallback Chain Inteligente
 - Sistema DEVE implementar fallback automático quando modelo primário falhar
-- Sistema DEVE configurar fallback chain por serviço:
-  - ScriptAI: Claude Sonnet 4 → Grok 4 → Gemini Flash → DeepSeek R1
-  - PostRápido: Claude Sonnet 4 → Gemini Flash → Llama 3.3
-  - AI Assistant: Gemini Flash → Claude Sonnet 4 → DeepSeek R1
+- Sistema DEVE permitir configurar fallback chain por serviço via variáveis de ambiente
 - Sistema DEVE logar qual modelo foi usado em cada requisição
 - Sistema DEVE retornar erro apenas se todos os modelos do fallback falharem
+- A configuração de fallback chains será feita pelo administrador via painel admin (ainda não desenvolvido)
 
 #### RF1.5: Validação de API Keys
 - Sistema DEVE validar `OPENROUTER_API_KEY` antes de processar requisições
@@ -149,6 +145,16 @@ Esta spec define a integração do OpenRouter como provedor unificado de modelos
 ---
 
 ## 🚫 RESTRIÇÕES E LIMITAÇÕES
+
+### ⚠️ RESTRIÇÃO CRÍTICA — FRONTEND
+
+**Esta implementação é 100% backend. Nenhum arquivo do frontend deve ser alterado.**
+
+- O painel atual do usuário (`/settings`, `/module-1`, `/module-2`, etc.) permanece intocado
+- A única API key que o usuário final configura no painel atual é a do HeyGen
+- A configuração do OpenRouter (chave de API, modelos por serviço) será feita exclusivamente pelo administrador via painel admin
+- O painel admin ainda não existe e não será desenvolvido nesta spec
+- Qualquer interface de configuração do OpenRouter fica para quando o painel admin for implementado
 
 ### Restrições Técnicas
 - DEVE usar Python 3.11+

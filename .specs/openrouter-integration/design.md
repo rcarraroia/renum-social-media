@@ -117,10 +117,12 @@ transcribe_audio()
 # OpenRouter
 use_openrouter: bool = False
 openrouter_api_key: str | None = None
-openrouter_script_model: str = "anthropic/claude-sonnet-4"
-openrouter_description_model: str = "anthropic/claude-sonnet-4"
-openrouter_assistant_model: str = "google/gemini-2.0-flash-exp"
+openrouter_script_model: str | None = None
+openrouter_description_model: str | None = None
+openrouter_assistant_model: str | None = None
 ```
+
+**Nota:** Modelos não têm valores padrão. A configuração será feita pelo administrador via painel admin (ainda não desenvolvido).
 
 ### 4. API Routes (Modificados)
 
@@ -261,10 +263,9 @@ else:
 **Decisão:** Fallback chain por serviço
 
 **Justificativa:**
-- ScriptAI precisa de criatividade (Claude/Grok)
-- PostRápido pode usar modelos mais baratos (Gemini)
-- AI Assistant precisa de velocidade (Gemini Flash)
-- Otimização de custos por caso de uso
+- Diferentes serviços têm necessidades diferentes (criatividade vs velocidade vs custo)
+- Permite otimização de custos por caso de uso
+- Configuração será feita pelo administrador via painel admin (ainda não desenvolvido)
 
 **Trade-offs:**
 - Configuração mais complexa
@@ -359,6 +360,18 @@ else:
   }
 }
 ```
+
+---
+
+## ⚠️ RESTRIÇÃO CRÍTICA — FRONTEND
+
+**Esta implementação é 100% backend. Nenhum arquivo do frontend deve ser alterado.**
+
+- O painel atual do usuário (`/settings`, `/module-1`, `/module-2`, etc.) permanece intocado
+- A única API key que o usuário final configura no painel atual é a do HeyGen
+- A configuração do OpenRouter (chave de API, modelos por serviço) será feita exclusivamente pelo administrador via painel admin
+- O painel admin ainda não existe e não será desenvolvido nesta spec
+- Qualquer interface de configuração do OpenRouter fica para quando o painel admin for implementado
 
 ---
 

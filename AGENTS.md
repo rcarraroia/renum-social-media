@@ -22,6 +22,9 @@ Limites de tempo obrigatórios para evitar loops improdutivos.
 ### **4. CORRIGIR PROBLEMAS, NÃO CONTORNÁ-LOS**
 NUNCA comentar código, remover funcionalidades ou simplificar para fazer build passar. SEMPRE corrigir o problema real.
 
+### **5. DOCUMENTAÇÃO CONSOLIDADA**
+Não crie múltiplos documentos sobre o mesmo assunto. Se precisar documentar algo, crie UM único arquivo consolidado. Nunca crie versões separadas como 'checklist', 'quick reference', 'architecture' e 'setup' para o mesmo tema — coloque tudo em um só lugar, na pasta docs de cada diretório.
+
 ---
 
 ## 📋 REGRA 1: ANÁLISE PREVENTIVA OBRIGATÓRIA

@@ -29,10 +29,11 @@ Esta spec define a integração do OpenRouter como provedor unificado de modelos
 
 ```
 .specs/openrouter-integration/
-├── README.md              # Este arquivo (visão geral)
-├── requirements.md        # Requisitos funcionais e não funcionais
-├── design.md             # Arquitetura, decisões técnicas, fluxos
-└── tasks.md              # Tasks atômicas com critérios de aceite
+├── README.md                    # Este arquivo (visão geral)
+├── requirements.md              # Requisitos funcionais e não funcionais
+├── design.md                    # Arquitetura, decisões técnicas, fluxos
+├── tasks.md                     # Tasks atômicas com critérios de aceite
+└── BUGFIX_TRANSCRIPTION.md      # Bugfix Spec (Fase 1-3: Documentação do bug)
 ```
 
 ---
@@ -49,15 +50,22 @@ Esta spec define a integração do OpenRouter como provedor unificado de modelos
    - `requirements.md` - Entenda O QUE precisa ser feito
    - `design.md` - Entenda COMO será implementado
    - `tasks.md` - Veja as tasks específicas
+   - `BUGFIX_TRANSCRIPTION.md` - Documentação completa dos bugs de transcrição (Fase 1-3)
 
-3. **Siga o Processo:**
+3. **IMPORTANTE - Correção de Bugs de Transcrição:**
+   - **LEIA `BUGFIX_TRANSCRIPTION.md` ANTES de implementar qualquer correção**
+   - Este documento segue a metodologia de Systematic Debugging (4 fases)
+   - Documenta o comportamento atual, root cause e casos de borda
+   - Garante que você entende o problema ANTES de alterar código
+
+4. **Siga o Processo:**
    - Análise preventiva ANTES de implementar (Regra 1 do AGENTS.md)
    - Consulte schema real do banco via Supabase Power (Regra 4 do AGENTS.md)
    - Implemente seguindo padrões existentes
    - Crie testes ANTES de marcar task como concluída
    - Valide casos de borda obrigatórios
 
-4. **Não Pule Etapas:**
+5. **Não Pule Etapas:**
    - Testes NÃO são opcionais
    - Casos de borda DEVEM ser testados
    - Funcionalidade NUNCA deve ser removida para passar testes
