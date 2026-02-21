@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     openrouter_script_model: str | None = Field(None, env="OPENROUTER_SCRIPT_MODEL")
     openrouter_description_model: str | None = Field(None, env="OPENROUTER_DESCRIPTION_MODEL")
     openrouter_assistant_model: str | None = Field(None, env="OPENROUTER_ASSISTANT_MODEL")
+    openrouter_fallback_model: str | None = Field(None, env="OPENROUTER_FALLBACK_MODEL")
     
     # Web Search
     tavily_api_key: str | None = Field(None, env="TAVILY_API_KEY")

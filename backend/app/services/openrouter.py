@@ -57,13 +57,15 @@ class OpenRouterService:
         self.script_model = settings.openrouter_script_model
         self.description_model = settings.openrouter_description_model
         self.assistant_model = settings.openrouter_assistant_model
+        self.fallback_model = settings.openrouter_fallback_model
         
         logger.info(
             "OpenRouter service initialized",
             extra={
                 "script_model": self.script_model or "not configured",
                 "description_model": self.description_model or "not configured",
-                "assistant_model": self.assistant_model or "not configured"
+                "assistant_model": self.assistant_model or "not configured",
+                "fallback_model": self.fallback_model or "not configured"
             }
         )
     
@@ -199,6 +201,8 @@ Retorne apenas o texto do script, sem explicações adicionais.
         
         # Tentar gerar com fallback chain
         models_to_try = [self.script_model]
+        if self.fallback_model:
+            models_to_try.append(self.fallback_model)
         
         for model in models_to_try:
             try:
@@ -344,32 +348,49 @@ Retorne apenas o texto do script, sem explicações adicionais.
             try:
                 logger.info(f"Generating description for {platform_lower} with {self.description_model}")
                 
-                response = await self._call_openrouter(
-                    model=self.description_model,
-                    prompt=prompt,
-                    max_tokens=1500
-                )
+                # Tentar com modelo primário, depois fallback se configurado
+                models_to_try = [self.description_model]
+                if self.fallback_model:
+                    models_to_try.append(self.fallback_model)
                 
-                text = response.get("text", "")
-                
-                # Extract hashtags
-                hashtags = self._extract_hashtags(text) if include_hashtags else []
-                
-                results[platform_lower] = {
-                    "text": text.strip(),
-                    "characterCount": len(text.strip()),
-                    "maxCharacters": max_chars,
-                    "hashtags": hashtags
-                }
-                
-                logger.info(
-                    f"Description generated for {platform_lower}",
-                    extra={
-                        "platform": platform_lower,
-                        "model": self.description_model,
-                        "char_count": len(text.strip())
-                    }
-                )
+                last_error = None
+                for model in models_to_try:
+                    try:
+                        response = await self._call_openrouter(
+                            model=model,
+                            prompt=prompt,
+                            max_tokens=1500
+                        )
+                        
+                        text = response.get("text", "")
+                        
+                        # Extract hashtags
+                        hashtags = self._extract_hashtags(text) if include_hashtags else []
+                        
+                        results[platform_lower] = {
+                            "text": text.strip(),
+                            "characterCount": len(text.strip()),
+                            "maxCharacters": max_chars,
+                            "hashtags": hashtags
+                        }
+                        
+                        logger.info(
+                            f"Description generated for {platform_lower}",
+                            extra={
+                                "platform": platform_lower,
+                                "model": model,
+                                "char_count": len(text.strip())
+                            }
+                        )
+                        break  # Sucesso, sair do loop de fallback
+                        
+                    except Exception as model_error:
+                        last_error = model_error
+                        if model == models_to_try[-1]:
+                            # Último modelo falhou, propagar erro
+                            raise
+                        logger.warning(f"Model {model} failed, trying fallback...")
+                        continue
                 
             except Exception as e:
                 logger.error(f"Error generating description for {platform}", exc_info=True)
