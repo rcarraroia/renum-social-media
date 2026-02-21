@@ -24,7 +24,7 @@ const Onboarding: React.FC = () => {
 
   // Step 1
   const [fullName, setFullName] = useState<string>(user?.full_name ?? "");
-  const [selectedProfiles, setSelectedProfiles] = useState<string[]>((user as any)?.organization?.user_profiles ?? []);
+  const [selectedProfiles, setSelectedProfiles] = useState<string[]>((user as any)?.organization?.professional_profiles ?? []);
   const [audience, setAudience] = useState<string>("general");
 
   // Step 2 social connections
@@ -79,7 +79,7 @@ const Onboarding: React.FC = () => {
       const toastId = showLoading("Salvando perfis...");
       const res: any = await (supabase.from("organizations") as any)
         .update({
-          user_profiles: selectedProfiles,
+          professional_profiles: selectedProfiles,
           updated_at: new Date().toISOString(),
         })
         .eq("id", orgId)

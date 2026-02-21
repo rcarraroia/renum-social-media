@@ -32,7 +32,7 @@ const SOCIAL_PLATFORMS: Array<SocialAccount["platform"]> = [
 const Settings: React.FC = () => {
   const { user } = useAuth();
   const orgId = user?.organization_id;
-  const [profiles, setProfiles] = React.useState<string[]>((user as any)?.organization?.user_profiles ?? []);
+  const [profiles, setProfiles] = React.useState<string[]>((user as any)?.organization?.professional_profiles ?? []);
   const [saving, setSaving] = React.useState(false);
 
   // Social accounts state
@@ -49,8 +49,8 @@ const Settings: React.FC = () => {
   const [heygenCredits, setHeygenCredits] = useState<{ used: number; total: number } | null>(null);
 
   useEffect(() => {
-    setProfiles((user as any)?.organization?.user_profiles ?? []);
-  }, [user?.organization?.user_profiles]);
+    setProfiles((user as any)?.organization?.professional_profiles ?? []);
+  }, [user?.organization?.professional_profiles]);
 
   // Load social accounts and heygen credits on mount
   useEffect(() => {
@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
     try {
       const res: any = await (supabase.from("organizations") as any)
         .update({
-          user_profiles: profiles,
+          professional_profiles: profiles,
           updated_at: new Date().toISOString(),
         })
         .eq("id", orgId)
@@ -259,7 +259,7 @@ const Settings: React.FC = () => {
             <p className="text-sm text-slate-500 mb-3">Selecione os perfis que descrevem sua atuação — isso personaliza scripts e sugestões.</p>
             <ProfileSelector value={profiles} onChange={setProfiles} />
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => { setProfiles((user as any)?.organization?.user_profiles ?? []); }} className="px-3 py-1 rounded bg-gray-100">Cancelar</button>
+              <button onClick={() => { setProfiles((user as any)?.organization?.professional_profiles ?? []); }} className="px-3 py-1 rounded bg-gray-100">Cancelar</button>
               <button onClick={saveProfiles} disabled={saving} className="px-4 py-2 rounded bg-indigo-600 text-white">{saving ? "Salvando..." : "Salvar Alterações"}</button>
             </div>
           </div>
