@@ -167,10 +167,14 @@ const Onboarding: React.FC = () => {
     }
     setHeygenTesting(true);
     try {
-      const res = await fetch("/api/integrations/heygen/test", {
-        method: "POST",
+      const res = await fetch("/api/integrations/heygen", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: heygenApiKey, avatarId: heygenAvatarId || undefined, voiceId: heygenVoiceId || undefined }),
+        body: JSON.stringify({ 
+          api_key: heygenApiKey, 
+          avatar_id: heygenAvatarId || undefined, 
+          voice_id: heygenVoiceId || undefined 
+        }),
       });
       const j = await res.json();
       if (res.ok && j?.success) {
@@ -178,7 +182,7 @@ const Onboarding: React.FC = () => {
         showSuccess("Conexão HeyGen válida!");
       } else {
         setHeygenConfigured(false);
-        showError(j?.message ?? "Falha ao testar HeyGen");
+        showError(j?.detail || j?.message || "Falha ao testar HeyGen");
       }
     } catch (e) {
       console.error(e);
