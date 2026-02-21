@@ -77,6 +77,16 @@ const Onboarding: React.FC = () => {
     }
     try {
       const toastId = showLoading("Salvando perfis...");
+      
+      console.log("[DEBUG] Salvando perfis:", {
+        orgId,
+        selectedProfiles,
+        payload: {
+          professional_profiles: selectedProfiles,
+          updated_at: new Date().toISOString(),
+        }
+      });
+      
       const res: any = await (supabase.from("organizations") as any)
         .update({
           professional_profiles: selectedProfiles,
@@ -85,13 +95,18 @@ const Onboarding: React.FC = () => {
         .eq("id", orgId)
         .select()
         .single();
+      
+      console.log("[DEBUG] Resposta do Supabase:", res);
+      
       dismissToast(toastId);
       if (res?.error) {
-        showError("Erro ao salvar perfis");
+        console.error("[DEBUG] Erro do Supabase:", res.error);
+        showError(`Erro ao salvar perfis: ${res.error.message || JSON.stringify(res.error)}`);
         return false;
       }
       return true;
     } catch (err) {
+      console.error("[DEBUG] Exception ao salvar:", err);
       showError("Erro ao salvar perfis");
       return false;
     }
