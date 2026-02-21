@@ -13,9 +13,9 @@ Validates: Requirements 6.1-6.5, 7.1-7.5, 8.1-8.5, 9.1-9.6, 10.1-10.6, 11.1-11.6
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
-from app.services.claude import ClaudeService
 from app.services.tavily import TavilyService
 from app.utils.logger import get_logger
+from app.config import settings
 import asyncio
 
 logger = get_logger("ai_assistant")
@@ -77,7 +77,14 @@ class AIAssistantService:
     
     def __init__(self):
         """Inicializa o serviço com dependências"""
-        self._claude = ClaudeService()
+        # Dual mode: OpenRouter ou Anthropic
+        if settings.use_openrouter:
+            from app.services.openrouter import OpenRouterService
+            self._ai_service = OpenRouterService()
+        else:
+            from app.services.claude import ClaudeService
+            self._ai_service = ClaudeService()
+        
         self._tavily = TavilyService()
         self._logger = get_logger("ai_assistant")
         self._tools = self._register_tools()
@@ -331,10 +338,10 @@ class AIAssistantService:
                 "content": message
             })
             
-            # Chamar Claude com tools
+            # Chamar AI service com tools
             def _sync_call():
-                return self._claude.client.messages.create(
-                    model=self._claude.model,
+                return self._ai_service.client.messages.create(
+                    model=self._ai_service.model,
                     max_tokens=2000,
                     system=system_prompt,
                     messages=formatted_history,
@@ -641,7 +648,7 @@ O usuário está gerenciando configurações da conta. Você pode:
         tone = arguments.get("tone", "casual")
         duration = arguments.get("duration_seconds", 60)
         
-        result = await self._claude.generate_script(
+        result = await self._ai_service.generate_script(
             topic=topic,
             context="",
             duration_seconds=duration,
@@ -677,7 +684,7 @@ O usuário está gerenciando configurações da conta. Você pode:
         content = arguments.get("content")
         platforms = arguments.get("platforms", [])
         
-        result = await self._claude.generate_descriptions(
+        result = await self._ai_service.generate_descriptions(
             transcription=content,
             platforms=platforms,
             tone="profissional",

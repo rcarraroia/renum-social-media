@@ -12,9 +12,20 @@ logger = setup_logger()
 
 class TranscriptionService:
     def __init__(self):
-        self.use_deepgram = bool(settings.deepgram_api_key)
-        
-        if not self.use_deepgram:
+        """
+        Initialize transcription service with Deepgram or Whisper
+
+        Validates DEEPGRAM_API_KEY properly:
+        - None, empty string, or "placeholder" are considered invalid
+        - Falls back to Whisper if Deepgram key is invalid
+        """
+        self.deepgram_api_key = settings.deepgram_api_key
+        self.use_deepgram = self._is_valid_api_key(self.deepgram_api_key)
+
+        if self.use_deepgram:
+            logger.info("Using Deepgram for transcription")
+        else:
+            logger.info("Using Whisper for transcription (Deepgram key invalid or not configured)")
             # Load Whisper model locally
             try:
                 import whisper
@@ -23,6 +34,28 @@ class TranscriptionService:
             except Exception as e:
                 logger.error(f"Failed to load Whisper model: {e}")
                 self.whisper_model = None
+
+    def _is_valid_api_key(self, key: Optional[str]) -> bool:
+        """
+        Validate if API key is valid
+
+        Args:
+            key: API key to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
+        if key is None:
+            return False
+
+        if key.strip() == "":
+            return False
+
+        if key.lower() == "placeholder":
+            return False
+
+        return True
+
     
     async def transcribe_audio(
         self, 
@@ -30,19 +63,37 @@ class TranscriptionService:
         language: str = "pt"
     ) -> Dict[str, Any]:
         """
-        Transcribe audio file to text
+        Transcribe audio file to text with automatic fallback
+        
+        Tries Deepgram first (if configured), falls back to Whisper on failure.
         
         Args:
             audio_path: Path to audio/video file
             language: Language code (pt, en, es, etc.)
             
         Returns:
-            Dict with 'text' and 'segments' (word-level timestamps)
+            Dict with 'text', 'segments', 'language', and 'provider'
         """
+        # Try Deepgram first if configured
         if self.use_deepgram:
-            return await self._transcribe_deepgram(audio_path, language)
-        else:
-            return await self._transcribe_whisper(audio_path, language)
+            try:
+                logger.info(f"Attempting transcription with Deepgram: {audio_path}")
+                result = await self._transcribe_deepgram(audio_path, language)
+                logger.info(f"Deepgram transcription successful: {audio_path}")
+                return result
+                
+            except Exception as e:
+                logger.error(
+                    f"Deepgram transcription failed: {str(e)}. "
+                    f"Falling back to Whisper for {audio_path}"
+                )
+                # Continue to Whisper fallback
+        
+        # Use Whisper (direct or as fallback)
+        logger.info(f"Using Whisper for transcription: {audio_path}")
+        result = await self._transcribe_whisper(audio_path, language)
+        logger.info(f"Whisper transcription successful: {audio_path}")
+        return result
     
     async def transcribe_video(
         self,

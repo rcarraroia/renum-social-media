@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     # AI Services
     anthropic_api_key: str | None = Field(None, env="ANTHROPIC_API_KEY")
     
+    # OpenRouter Configuration
+    use_openrouter: bool = Field(False, env="USE_OPENROUTER")
+    openrouter_api_key: str | None = Field(None, env="OPENROUTER_API_KEY")
+    openrouter_script_model: str | None = Field(None, env="OPENROUTER_SCRIPT_MODEL")
+    openrouter_description_model: str | None = Field(None, env="OPENROUTER_DESCRIPTION_MODEL")
+    openrouter_assistant_model: str | None = Field(None, env="OPENROUTER_ASSISTANT_MODEL")
+    
     # Web Search
     tavily_api_key: str | None = Field(None, env="TAVILY_API_KEY")
     

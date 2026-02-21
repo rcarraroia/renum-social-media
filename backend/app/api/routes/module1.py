@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from app.api.deps import get_current_organization, get_current_user
 from app.services.tavily import TavilyService
-from app.services.claude import ClaudeService
+from app.config import settings
 from app.models.scriptai import (
     GenerateScriptRequest, RegenerateScriptRequest, ScriptResponse,
     SaveDraftRequest, UpdateDraftRequest, DraftResponse, DraftListResponse
@@ -16,6 +16,16 @@ import uuid
 router = APIRouter()
 logger = get_logger("module1")
 
+# Dual mode: OpenRouter ou Anthropic baseado em configuração
+if settings.use_openrouter:
+    from app.services.openrouter import OpenRouterService
+    ai_service = OpenRouterService()
+    logger.info("Module1 using OpenRouter for AI generation")
+else:
+    from app.services.claude import ClaudeService
+    ai_service = ClaudeService()
+    logger.info("Module1 using Anthropic Claude for AI generation")
+
 
 @router.post("/generate", response_model=ScriptResponse)
 async def generate_script(
@@ -28,7 +38,7 @@ async def generate_script(
     Fluxo:
     1. Validar inputs
     2. Pesquisar contexto via Tavily
-    3. Gerar script via Claude
+    3. Gerar script via AI (OpenRouter ou Claude)
     4. Retornar script + fontes + metadata
     5. Registrar em api_logs
     """
@@ -36,7 +46,6 @@ async def generate_script(
 
     try:
         # Validar API keys antes de processar
-        from app.config import settings
         if not settings.tavily_api_key or settings.tavily_api_key == "placeholder":
             logger.error("Tavily API key not configured")
             raise HTTPException(
@@ -44,12 +53,21 @@ async def generate_script(
                 detail="Serviço de pesquisa não configurado. Contate o administrador."
             )
         
-        if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
-            logger.error("Anthropic API key not configured")
-            raise HTTPException(
-                status_code=503,
-                detail="Serviço de geração de script não configurado. Contate o administrador."
-            )
+        # Validar API key do provider de IA (OpenRouter ou Anthropic)
+        if settings.use_openrouter:
+            if not settings.openrouter_api_key or settings.openrouter_api_key == "placeholder":
+                logger.error("OpenRouter API key not configured")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Serviço de geração de script não configurado. Contate o administrador."
+                )
+        else:
+            if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
+                logger.error("Anthropic API key not configured")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Serviço de geração de script não configurado. Contate o administrador."
+                )
         
         # Tavily pesquisa contexto
         tavily_service = TavilyService()
@@ -77,9 +95,8 @@ async def generate_script(
                 "url": result["url"]
             })
 
-        # Claude gera script
-        claude_service = ClaudeService()
-        script_result = await claude_service.generate_script_from_research(
+        # AI gera script (OpenRouter ou Claude)
+        script_result = await ai_service.generate_script_from_research(
             topic=request.topic,
             research_context=research_context,
             audience=request.audience,
@@ -89,7 +106,7 @@ async def generate_script(
         )
 
         if not script_result.get("success"):
-            logger.error(f"Claude error: {script_result}")
+            logger.error(f"AI generation error: {script_result}")
             raise HTTPException(
                 status_code=502,
                 detail="Erro ao gerar script. Tente novamente."
@@ -109,7 +126,8 @@ async def generate_script(
                 "word_count": script_result.get("word_count", 0),
                 "estimated_duration": script_result.get("estimated_duration", 0),
                 "generated_at": datetime.utcnow().isoformat(),
-                "model": script_result.get("model", "")
+                "model": script_result.get("model", ""),
+                "provider": "openrouter" if settings.use_openrouter else "anthropic"
             }
         }
 
@@ -154,7 +172,6 @@ async def regenerate_script(
 
     try:
         # Validar API keys antes de processar
-        from app.config import settings
         if not settings.tavily_api_key or settings.tavily_api_key == "placeholder":
             logger.error("Tavily API key not configured")
             raise HTTPException(
@@ -162,12 +179,21 @@ async def regenerate_script(
                 detail="Serviço de pesquisa não configurado. Contate o administrador."
             )
         
-        if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
-            logger.error("Anthropic API key not configured")
-            raise HTTPException(
-                status_code=503,
-                detail="Serviço de geração de script não configurado. Contate o administrador."
-            )
+        # Validar API key do provider de IA (OpenRouter ou Anthropic)
+        if settings.use_openrouter:
+            if not settings.openrouter_api_key or settings.openrouter_api_key == "placeholder":
+                logger.error("OpenRouter API key not configured")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Serviço de geração de script não configurado. Contate o administrador."
+                )
+        else:
+            if not settings.anthropic_api_key or settings.anthropic_api_key == "placeholder":
+                logger.error("Anthropic API key not configured")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Serviço de geração de script não configurado. Contate o administrador."
+                )
         
         # Tavily pesquisa contexto
         tavily_service = TavilyService()
@@ -195,9 +221,8 @@ async def regenerate_script(
                 "url": result["url"]
             })
 
-        # Claude gera script com feedback
-        claude_service = ClaudeService()
-        script_result = await claude_service.generate_script_from_research(
+        # AI gera script com feedback (OpenRouter ou Claude)
+        script_result = await ai_service.generate_script_from_research(
             topic=request.topic,
             research_context=research_context,
             audience=request.audience,
@@ -208,7 +233,7 @@ async def regenerate_script(
         )
 
         if not script_result.get("success"):
-            logger.error(f"Claude error: {script_result}")
+            logger.error(f"AI generation error: {script_result}")
             raise HTTPException(
                 status_code=502,
                 detail="Erro ao gerar script. Tente novamente."
@@ -228,7 +253,8 @@ async def regenerate_script(
                 "word_count": script_result.get("word_count", 0),
                 "estimated_duration": script_result.get("estimated_duration", 0),
                 "generated_at": datetime.utcnow().isoformat(),
-                "model": script_result.get("model", "")
+                "model": script_result.get("model", ""),
+                "provider": "openrouter" if settings.use_openrouter else "anthropic"
             },
             "feedback_history": [
                 {
@@ -263,6 +289,8 @@ async def regenerate_script(
             status_code=500,
             detail="Erro interno. Tente novamente."
         )
+
+
 @router.post("/drafts", response_model=DraftResponse)
 async def save_draft(
     request: SaveDraftRequest,

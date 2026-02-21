@@ -18,10 +18,17 @@ from app.models.schemas import (
 )
 from app.services.video_processing import VideoProcessingService
 from app.services.transcription import TranscriptionService
-from app.services.claude import ClaudeService
 from app.database import supabase, log_api_call
 from app.config import settings
 from app.utils.logger import get_logger
+
+# Dual mode: OpenRouter ou Anthropic
+if settings.use_openrouter:
+    from app.services.openrouter import OpenRouterService
+    ai_service = OpenRouterService()
+else:
+    from app.services.claude import ClaudeService
+    ai_service = ClaudeService()
 
 logger = get_logger("module2")
 router = APIRouter()
@@ -453,8 +460,7 @@ async def generate_descriptions(
         profile_context = str(org_data.get("professional_profiles", "")) if org_data else ""
         
         # Generate descriptions
-        claude_service = ClaudeService()
-        descriptions = await claude_service.generate_descriptions(
+        descriptions = await ai_service.generate_descriptions(
             transcription=video_data["transcription"],
             platforms=request.platforms,
             tone=request.tone,
@@ -506,8 +512,7 @@ async def regenerate_description(
             raise HTTPException(status_code=400, detail="Vídeo não possui transcrição")
         
         # Regenerate description
-        claude_service = ClaudeService()
-        description = await claude_service.regenerate_description(
+        description = await ai_service.regenerate_description(
             transcription=video_data["transcription"],
             platform=request.platform,
             instructions=request.instructions

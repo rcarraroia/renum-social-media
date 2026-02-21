@@ -17,6 +17,7 @@ sqlalchemy>=2.0.0  # Para async sessions
 
 # AI Services
 anthropic>=0.49.0  # Support for claude-sonnet-4
+openai>=1.54.0  # For OpenRouter compatibility
 openai-whisper>=20231117
 
 # HTTP Client
