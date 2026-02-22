@@ -167,6 +167,8 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
    * Salva a configuração completa (API Key + Avatar + Voz)
    */
   const handleSaveConfiguration = async () => {
+    console.log("🔵 BOTÃO SALVAR CLICADO - Avatar:", selectedAvatarId, "Voz:", selectedVoiceId);
+    
     if (!selectedAvatarId) {
       showError("Selecione um avatar");
       return;
@@ -177,6 +179,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       return;
     }
 
+    console.log("🟢 VALIDAÇÕES OK - Enviando requisição...");
     setSavingConfig(true);
     const toastId = showLoading("Salvando configuração...");
 
@@ -185,6 +188,8 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       if (!token) {
         throw new Error("Usuário não autenticado");
       }
+
+      console.log("🟢 TOKEN OK - URL:", import.meta.env.VITE_API_URL);
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen`, {
         method: "PUT",
@@ -199,12 +204,18 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         }),
       });
 
+      console.log("🟢 RESPOSTA RECEBIDA - Status:", response.status);
+
       dismissToast(toastId);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.log("🔴 ERRO NA RESPOSTA:", errorData);
         throw new Error(errorData.detail || "Erro ao salvar configuração");
       }
+
+      const responseData = await response.json();
+      console.log("🟢 SUCESSO:", responseData);
 
       showSuccess("Configuração salva com sucesso!");
 
@@ -217,7 +228,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       }
     } catch (error: any) {
       dismissToast(toastId);
-      console.error("Erro ao salvar configuração:", error);
+      console.error("🔴 ERRO CRÍTICO:", error);
       showError(error.message || "Erro ao salvar configuração. Tente novamente.");
     } finally {
       setSavingConfig(false);
