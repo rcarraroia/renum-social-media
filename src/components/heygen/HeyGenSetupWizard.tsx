@@ -29,11 +29,12 @@ interface Avatar {
 interface HeyGenSetupWizardProps {
   onComplete?: () => void;
   onCancel?: () => void;
+  initialStep?: WizardStep; // NOVO: permite começar em um passo específico
 }
 
-const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCancel }) => {
+const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCancel, initialStep = 1 }) => {
   // Wizard state
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(initialStep);
   
   // Step 1: API Key
   const [apiKey, setApiKey] = useState("");
@@ -94,6 +95,11 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
 
       const data = await response.json();
       console.log("🟢 Avatares carregados:", data.avatars?.length || 0);
+      console.log("🔵 Primeiros 5 avatares:", data.avatars?.slice(0, 5).map((a: Avatar) => ({
+        id: a.avatar_id,
+        name: a.avatar_name,
+        is_clone: a.is_clone
+      })));
       setAvatars(data.avatars || []);
     } catch (error) {
       console.error("🔴 Erro ao carregar avatares:", error);

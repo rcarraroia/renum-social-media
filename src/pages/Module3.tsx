@@ -292,6 +292,7 @@ const Module3Page: React.FC = () => {
           </div>
 
           <HeyGenSetupWizard
+            initialStep={3}
             onComplete={() => {
               showSuccess("Configuração atualizada com sucesso!");
               setShowWizard(false);
