@@ -147,6 +147,15 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   };
 
   /**
+   * Volta para o Passo 1 e reseta o estado de validação
+   */
+  const handleBackToStep1 = () => {
+    setCurrentStep(1);
+    setValidationState("idle");
+    setValidationError("");
+  };
+
+  /**
    * Salva a configuração completa (API Key + Avatar + Voz)
    */
   const handleSaveConfiguration = async () => {
@@ -506,7 +515,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         {/* Botões de ação */}
         <div className="flex gap-3 pt-4 border-t border-border">
           <Button
-            onClick={() => setCurrentStep(1)}
+            onClick={handleBackToStep1}
             disabled={savingConfig}
             variant="outline"
           >
