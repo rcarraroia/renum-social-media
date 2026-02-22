@@ -88,6 +88,7 @@ class Settings(BaseSettings):
                 "https://app.renum.com",
                 "https://www.renum.com",
                 "https://renum.vercel.app",
+                "https://renum-post.vercel.app",  # ADICIONADO
             ]
         elif self.environment == "staging":
             return [
