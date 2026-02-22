@@ -39,6 +39,8 @@ const AvatarCard: React.FC<AvatarCardProps> = ({
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const isSelected = selectedAvatarId === avatar.avatar_id;
 
+  console.log(`🎤 AvatarCard ${avatar.avatar_name}: ${voices.length} vozes disponíveis`);
+
   const handleSelectAvatar = () => {
     onSelectAvatar(avatar.avatar_id);
     setShowVoiceSelector(true);

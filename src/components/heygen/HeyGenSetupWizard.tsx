@@ -88,6 +88,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
    * Carrega lista de avatares do backend
    */
   const loadAvatars = async () => {
+    console.log("🔵 Carregando avatares...");
     setLoadingAvatars(true);
     try {
       const token = await getAuthToken();
@@ -110,9 +111,10 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       }
 
       const data = await response.json();
+      console.log("🟢 Avatares carregados:", data.avatars?.length || 0);
       setAvatars(data.avatars || []);
     } catch (error) {
-      console.error("Erro ao carregar avatares:", error);
+      console.error("🔴 Erro ao carregar avatares:", error);
       showError("Erro ao carregar avatares. Tente novamente.");
     } finally {
       setLoadingAvatars(false);
@@ -123,6 +125,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
    * Carrega lista de vozes do backend
    */
   const loadVoices = async () => {
+    console.log("🔵 Carregando vozes...");
     setLoadingVoices(true);
     try {
       const token = await getAuthToken();
@@ -145,9 +148,10 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       }
 
       const data = await response.json();
+      console.log("🟢 Vozes carregadas:", data.voices?.length || 0);
       setVoices(data.voices || []);
     } catch (error) {
-      console.error("Erro ao carregar vozes:", error);
+      console.error("🔴 Erro ao carregar vozes:", error);
       showError("Erro ao carregar vozes. Tente novamente.");
     } finally {
       setLoadingVoices(false);
