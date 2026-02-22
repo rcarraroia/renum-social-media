@@ -11,6 +11,8 @@ import AvatarCard from "./AvatarCard";
  * 
  * Passo 1: Validação de API Key
  * Passo 2: Seleção de Avatar + Voz
+ * 
+ * @version 1.0.1 - Debug logging enabled
  */
 
 type WizardStep = 1 | 2;
