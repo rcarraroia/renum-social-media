@@ -142,35 +142,29 @@ class AnalyticsService {
     this.queue = [];
 
     try {
-      if (sync && navigator.sendBeacon) {
-        // Use sendBeacon for synchronous requests (on page unload)
-        const blob = new Blob([JSON.stringify(eventsToSend)], { type: "application/json" });
-        navigator.sendBeacon("/api/analytics/track", blob);
-      } else {
-        // Use regular fetch for async requests
-        const { error } = await supabase.from("analytics_events").insert(
-          eventsToSend.map((event) => ({
-            event_type: event.event_type,
-            event_name: event.event_name,
-            user_id: event.user_id,
-            session_id: event.session_id,
-            page_path: event.page_path,
-            page_title: event.page_title,
-            properties: event.properties,
-            device_info: event.device_info,
-            performance: event.performance,
-            created_at: event.timestamp,
-          }))
-        );
+      // Sempre usar Supabase diretamente (sem sendBeacon)
+      const { error } = await supabase.from("analytics_events").insert(
+        eventsToSend.map((event) => ({
+          event_type: event.event_type,
+          event_name: event.event_name,
+          user_id: event.user_id,
+          session_id: event.session_id,
+          page_path: event.page_path,
+          page_title: event.page_title,
+          properties: event.properties,
+          device_info: event.device_info,
+          performance: event.performance,
+          created_at: event.timestamp,
+        }))
+      );
 
-        if (error) {
-          console.error("Failed to send analytics:", error);
-          // Re-add to queue on failure
-          this.queue.unshift(...eventsToSend);
-        } else {
-          // Clear localStorage on success
-          this.clearLocalStorage(eventsToSend);
-        }
+      if (error) {
+        console.error("Failed to send analytics:", error);
+        // Re-add to queue on failure
+        this.queue.unshift(...eventsToSend);
+      } else {
+        // Clear localStorage on success
+        this.clearLocalStorage(eventsToSend);
       }
     } catch (error) {
       console.error("Failed to flush analytics:", error);
