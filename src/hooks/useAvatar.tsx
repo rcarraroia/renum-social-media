@@ -142,7 +142,8 @@ export function useAvatar(initialVideoId?: string | null) {
         // Evaluate prereqs
         if (orgPlan !== "pro") {
           if (mounted) setState("blocked_plan");
-        } else if (!cfg.apiKey || !cfg.avatarId || !cfg.voiceId) {
+        } else if (!cfg.apiKey) {
+          // MUDANÇA: Agora só exige API Key, avatar é opcional
           if (mounted) setState("blocked_heygen");
         } else {
           // ready to proceed; if a script was imported, jump to config; else input

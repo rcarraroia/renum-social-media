@@ -3,8 +3,6 @@ import { Eye, EyeOff, Loader2, CheckCircle2, XCircle, ExternalLink, RefreshCw, U
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import HeyGenCloneGuide from "./HeyGenCloneGuide";
-import AvatarCard from "./AvatarCard";
 
 /**
  * HeyGenSetupWizard - Wizard de configuração HeyGen em 3 passos
@@ -20,27 +18,12 @@ type WizardStep = 1 | 2 | 3;
 
 type ValidationState = "idle" | "loading" | "success" | "error";
 
-interface ValidationResult {
-  valid: boolean;
-  credits_remaining?: number;
-  plan?: string;
-  error?: string;
-}
-
 interface Avatar {
   avatar_id: string;
   avatar_name: string;
   preview_image_url?: string;
   gender?: string;
   is_clone?: boolean;
-}
-
-interface Voice {
-  voice_id: string;
-  voice_name: string;
-  language?: string;
-  gender?: string;
-  preview_audio_url?: string;
 }
 
 interface HeyGenSetupWizardProps {
@@ -120,123 +103,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
     }
   };
 
-  /**
-   * Carrega lista de vozes do backend
-   */
-  const loadVoices = async () => {
-    console.log("🔵 Carregando vozes...");
-    setLoadingVoices(true);
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("Usuário não autenticado");
-      }
 
-      // Usar endpoint do wizard que aceita API Key no body
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/wizard/voices`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({ api_key: apiKey }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Erro ao carregar vozes");
-      }
-
-      const data = await response.json();
-      console.log("🟢 Vozes carregadas:", data.voices?.length || 0);
-      setVoices(data.voices || []);
-    } catch (error) {
-      console.error("🔴 Erro ao carregar vozes:", error);
-      showError("Erro ao carregar vozes. Tente novamente.");
-    } finally {
-      setLoadingVoices(false);
-    }
-  };
-
-  /**
-   * Volta para o Passo 1 e reseta o estado de validação
-   */
-  const handleBackToStep1 = () => {
-    setCurrentStep(1);
-    setValidationState("idle");
-    setValidationError("");
-  };
-
-  /**
-   * Salva a configuração completa (API Key + Avatar + Voz)
-   */
-  const handleSaveConfiguration = async () => {
-    console.log("🔵 BOTÃO SALVAR CLICADO - Avatar:", selectedAvatarId, "Voz:", selectedVoiceId);
-    
-    if (!selectedAvatarId) {
-      showError("Selecione um avatar");
-      return;
-    }
-
-    if (!selectedVoiceId) {
-      showError("Selecione uma voz");
-      return;
-    }
-
-    console.log("🟢 VALIDAÇÕES OK - Enviando requisição...");
-    setSavingConfig(true);
-    const toastId = showLoading("Salvando configuração...");
-
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      console.log("🟢 TOKEN OK - URL:", import.meta.env.VITE_API_URL);
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          api_key: apiKey,
-          avatar_id: selectedAvatarId,
-          voice_id: selectedVoiceId,
-        }),
-      });
-
-      console.log("🟢 RESPOSTA RECEBIDA - Status:", response.status);
-
-      dismissToast(toastId);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log("🔴 ERRO NA RESPOSTA:", errorData);
-        throw new Error(errorData.detail || "Erro ao salvar configuração");
-      }
-
-      const responseData = await response.json();
-      console.log("🟢 SUCESSO:", responseData);
-
-      showSuccess("Configuração salva com sucesso!");
-
-      if (onComplete) {
-        onComplete({
-          apiKey,
-          avatarId: selectedAvatarId,
-          voiceId: selectedVoiceId,
-        });
-      }
-    } catch (error: any) {
-      dismissToast(toastId);
-      console.error("🔴 ERRO CRÍTICO:", error);
-      showError(error.message || "Erro ao salvar configuração. Tente novamente.");
-    } finally {
-      setSavingConfig(false);
-    }
-  };
 
   /**
    * Valida e salva a API Key imediatamente
@@ -295,16 +162,6 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       console.error("Erro ao validar API Key:", error);
     } finally {
       setSavingApiKey(false);
-    }
-  };
-        showError(errorMessage);
-      }
-    } catch (error: any) {
-      setValidationState("error");
-      const errorMessage = error.message || "Erro ao validar API Key. Tente novamente.";
-      setValidationError(errorMessage);
-      showError(errorMessage);
-      console.error("Erro ao validar API Key:", error);
     }
   };
 
@@ -419,12 +276,6 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
             ) : (
               "Salvar e Continuar"
             )}
-                <CheckCircle2 className="w-5 h-5" />
-                Validado
-              </>
-            ) : (
-              "Conectar"
-            )}
           </Button>
         </div>
       </div>
@@ -432,15 +283,119 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   };
 
   /**
-   * Renderiza o Passo 2: Seleção de Avatar + Voz
+   * Renderiza o Passo 2: Guia de Criação de Avatar
    */
   const renderStep2 = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold text-card-foreground">Selecionar Avatar e Voz</h2>
+          <h2 className="text-2xl font-semibold text-card-foreground">Criar Seu Avatar Digital</h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Escolha o avatar e a voz que serão usados nos seus vídeos.
+            Para usar o AvatarAI, você precisa criar um clone digital no HeyGen.
+          </p>
+        </div>
+
+        {/* Card de instruções */}
+        <div className="bg-accent border border-border rounded-lg p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-card-foreground mb-2">Como criar seu clone:</h3>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">1.</span>
+                  <span>Clique em "Ir para HeyGen Studio" abaixo</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">2.</span>
+                  <span>Faça login com sua conta HeyGen</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">3.</span>
+                  <span>Clique em "Create Avatar" e siga as instruções</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">4.</span>
+                  <span>Grave um vídeo de 2 minutos seguindo o script</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">5.</span>
+                  <span>Aguarde o processamento (pode levar algumas horas)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-primary">6.</span>
+                  <span>Volte aqui e clique em "Já criei meu avatar"</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        {/* Botão para HeyGen Studio */}
+        <div className="flex flex-col gap-3">
+          <Button
+            onClick={() => window.open('https://app.heygen.com/avatar', '_blank')}
+            variant="default"
+            size="lg"
+            className="w-full"
+          >
+            <ExternalLink className="w-5 h-5 mr-2" />
+            Ir para HeyGen Studio
+          </Button>
+          
+          <p className="text-xs text-center text-muted-foreground">
+            Uma nova aba será aberta. Não feche esta página!
+          </p>
+        </div>
+
+        {/* Informação adicional */}
+        <div className="bg-muted border border-border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-card-foreground">Dica:</span> O processo de criação do clone leva cerca de 5-10 minutos para gravar o vídeo, 
+            e o processamento pode levar de 2 a 24 horas. Você pode fechar esta página e voltar depois.
+          </p>
+        </div>
+
+        {/* Botões de navegação */}
+        <div className="flex gap-3 pt-4 border-t border-border">
+          <Button
+            onClick={() => setCurrentStep(1)}
+            variant="outline"
+          >
+            ← Voltar
+          </Button>
+          <Button
+            onClick={() => setCurrentStep(3)}
+            variant="default"
+            className="flex-1"
+          >
+            Já criei meu avatar →
+          </Button>
+          <Button
+            onClick={() => {
+              if (onComplete) onComplete();
+            }}
+            variant="ghost"
+          >
+            Pular por enquanto
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Renderiza o Passo 3: Seleção de Avatar
+   */
+  const renderStep3 = () => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-card-foreground">Selecionar Seu Avatar</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Escolha qual avatar você quer usar nos seus vídeos.
           </p>
         </div>
 
@@ -455,64 +410,175 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         {/* Avatares carregados */}
         {!loadingAvatars && avatars.length > 0 && (
           <div className="space-y-6">
-            {/* Seção de Avatares Personalizados */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-card-foreground flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Seus Avatares Personalizados
-                </h3>
-                <Button
-                  onClick={loadAvatars}
-                  disabled={loadingAvatars}
-                  variant="ghost"
-                  size="sm"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {avatars.map((avatar) => (
+                <button
+                  key={avatar.avatar_id}
+                  onClick={() => handleSelectAvatar(avatar.avatar_id)}
+                  disabled={savingAvatar}
+                  className={`relative border-2 rounded-lg overflow-hidden transition-all ${
+                    selectedAvatarId === avatar.avatar_id
+                      ? "border-primary shadow-sm"
+                      : "border-border hover:border-primary/50"
+                  } ${savingAvatar ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  Atualizar
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {avatars.map((avatar) => (
-                  <AvatarCard
-                    key={avatar.avatar_id}
-                    avatar={avatar}
-                    voices={voices}
-                    selectedAvatarId={selectedAvatarId}
-                    selectedVoiceId={selectedVoiceId}
-                    onSelectAvatar={setSelectedAvatarId}
-                    onSelectVoice={setSelectedVoiceId}
-                    loadingVoices={loadingVoices}
-                  />
-                ))}
-              </div>
+                  {/* Avatar Preview */}
+                  <div className="relative aspect-[3/4] bg-muted">
+                    {avatar.preview_image_url ? (
+                      <img
+                        src={avatar.preview_image_url}
+                        alt={avatar.avatar_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-16 h-16 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Overlay de seleção */}
+                    {selectedAvatarId === avatar.avatar_id && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                          <CheckCircle2 className="w-6 h-6 text-primary-foreground" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Badge de clone */}
+                    {avatar.is_clone && (
+                      <div className="absolute top-2 right-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded">
+                        Clone
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Informações */}
+                  <div className="p-3">
+                    <h4 className="font-medium text-card-foreground truncate">{avatar.avatar_name}</h4>
+                    {avatar.gender && (
+                      <p className="text-xs text-muted-foreground capitalize">{avatar.gender}</p>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
 
-            {/* Card "Criar Clone" */}
-            <div>
-              <h3 className="text-lg font-semibold text-card-foreground mb-3">Criar Novo Clone</h3>
-              <button
-                onClick={() => setShowCloneGuide(true)}
-                className="w-full p-6 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors group"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                    <User className="w-8 h-8 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-card-foreground">Criar Clone Personalizado</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Crie um avatar digital com sua aparência
-                    </p>
-                  </div>
+            {/* Botão para criar novo clone */}
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="w-full p-6 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors group"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                  <Sparkles className="w-6 h-6 text-primary" />
                 </div>
-              </button>
-            </div>
+                <div>
+                  <p className="font-medium text-card-foreground">Criar Novo Clone</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Voltar ao guia de criação
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
         )}
 
         {/* Estado vazio */}
         {!loadingAvatars && avatars.length === 0 && (
+          <div className="text-center py-12 space-y-6">
+            <div className="flex flex-col items-center gap-4">
+              <User className="w-16 h-16 text-muted-foreground" />
+              <div>
+                <p className="text-lg font-semibold text-card-foreground mb-2">
+                  Nenhum avatar encontrado
+                </p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Parece que você ainda não criou seu avatar no HeyGen, ou ele ainda está sendo processado.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => setCurrentStep(2)} variant="default" size="lg">
+                <Sparkles className="w-5 h-5 mr-2" />
+                Voltar ao Guia
+              </Button>
+              <Button onClick={loadAvatars} variant="outline" size="lg">
+                <RefreshCw className="w-5 h-5 mr-2" />
+                Atualizar Lista
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Botões de navegação */}
+        <div className="flex gap-3 pt-4 border-t border-border">
+          <Button
+            onClick={() => setCurrentStep(2)}
+            disabled={savingAvatar}
+            variant="outline"
+          >
+            ← Voltar
+          </Button>
+          {selectedAvatarId && (
+            <div className="flex-1 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              Avatar selecionado
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Salva o avatar selecionado
+   */
+  const handleSelectAvatar = async (avatarId: string) => {
+    setSelectedAvatarId(avatarId);
+    setSavingAvatar(true);
+
+    const toastId = showLoading("Salvando avatar...");
+
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/save-avatar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar_id: avatarId }),
+      });
+
+      dismissToast(toastId);
+
+      if (response.ok) {
+        showSuccess("Avatar configurado com sucesso!");
+        
+        // Aguardar 1 segundo e chamar onComplete
+        setTimeout(() => {
+          if (onComplete) onComplete();
+        }, 1000);
+      } else {
+        const data = await response.json();
+        throw new Error(data.detail || "Erro ao salvar avatar");
+      }
+    } catch (error: any) {
+      dismissToast(toastId);
+      console.error("Erro ao salvar avatar:", error);
+      showError(error.message || "Erro ao salvar avatar. Tente novamente.");
+      setSelectedAvatarId(""); // Limpar seleção em caso de erro
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
+
+s && avatars.length === 0 && (
           <div className="text-center py-12 space-y-6">
             <div className="flex flex-col items-center gap-4">
               <User className="w-16 h-16 text-muted-foreground" />
@@ -621,7 +687,22 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
               2
             </div>
             <span className={`text-sm font-medium transition-colors ${currentStep === 2 ? "text-card-foreground" : "text-muted-foreground"}`}>
-              Avatar & Voz
+              Guia Avatar
+            </span>
+          </div>
+
+          <div className="w-16 h-0.5 bg-border" />
+
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                currentStep === 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              3
+            </div>
+            <span className={`text-sm font-medium transition-colors ${currentStep === 3 ? "text-card-foreground" : "text-muted-foreground"}`}>
+              Selecionar
             </span>
           </div>
         </div>
@@ -629,7 +710,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
 
       {/* Conteúdo do passo atual */}
       <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-        {currentStep === 1 ? renderStep1() : renderStep2()}
+        {currentStep === 1 ? renderStep1() : currentStep === 2 ? renderStep2() : renderStep3()}
       </div>
     </div>
   );

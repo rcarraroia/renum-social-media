@@ -240,7 +240,8 @@ const Module3Page: React.FC = () => {
 
   // For Pro users: check if HeyGen is configured
   // If not configured, show the setup wizard (replaces entire screen)
-  const heygenConfigured = !!(heygenConfig?.apiKey && heygenConfig?.avatarId && heygenConfig?.voiceId);
+  // MUDANÇA: Agora só exige API Key, avatar é opcional
+  const heygenConfigured = !!(heygenConfig?.apiKey);
 
   // If HeyGen is not configured, show the setup wizard
   if (!heygenConfigured) {
