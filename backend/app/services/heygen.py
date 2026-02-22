@@ -117,7 +117,7 @@ class HeyGenService:
         """
         Testa se as credenciais HeyGen são válidas.
         
-        Faz uma requisição GET para /v1/user/remaining_quota para validar a API Key
+        Faz uma requisição GET para /v2/user/remaining_quota para validar a API Key
         e obter informações da conta.
         
         Args:
@@ -130,12 +130,12 @@ class HeyGenService:
             - error (dict): Informações de erro (se inválido)
             
         Nota:
-            O campo account_name não está disponível na resposta da API /v1/user/remaining_quota
+            O campo account_name não está disponível na resposta da API /v2/user/remaining_quota
             
         Raises:
             Não lança exceções - retorna dict com error em caso de falha
         """
-        endpoint = "/v1/user/remaining_quota"
+        endpoint = "/v2/user/remaining_quota"
         url = f"{self.BASE_URL}{endpoint}"
         
         try:
@@ -286,7 +286,7 @@ class HeyGenService:
             - credits_used (int): Créditos já utilizados
             - error (dict): Informações de erro (se houver falha)
         """
-        endpoint = "/v1/user/remaining_quota"
+        endpoint = "/v2/user/remaining_quota"
         url = f"{self.BASE_URL}{endpoint}"
         
         try:
