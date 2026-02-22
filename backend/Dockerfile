@@ -17,10 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy and install Python dependencies
-COPY requirements.txt .
+# Copy and install Python dependencies (lite version without heavy ML libs)
+COPY requirements.lite.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.lite.txt
 
 # ============================================
 # STAGE 2: Runtime
