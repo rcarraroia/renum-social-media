@@ -97,6 +97,97 @@ async def validate_heygen_key(
         )
 
 
+@router.post("/heygen/save-api-key")
+async def save_heygen_api_key(
+    credentials: HeyGenApiKeyOnly,
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Valida e salva apenas a API Key do HeyGen (sem avatar/voz).
+    
+    Permite configuração em etapas - usuário pode configurar avatar/voz depois.
+    
+    Requer plano Pro.
+    
+    Args:
+        credentials: Apenas API Key para salvar
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "success": true,
+            "message": "API Key salva com sucesso",
+            "credits_remaining": 150.5
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key for inválida
+        HTTPException 403: Se plano não for Pro
+        HTTPException 500: Se erro ao salvar no banco
+    """
+    try:
+        logger.info(f"[SAVE_API_KEY] Iniciando salvamento para org_id: {org_id}")
+        
+        # 1. Validar credenciais com HeyGen API
+        logger.info("[SAVE_API_KEY] Validando credenciais com HeyGen API...")
+        heygen_service = HeyGenService()
+        validation_result = await heygen_service.test_credentials(credentials.api_key)
+        
+        if not validation_result.get("valid"):
+            logger.error(f"[SAVE_API_KEY] Validação falhou: {validation_result}")
+            raise HTTPException(
+                status_code=400,
+                detail="API Key inválida. Verifique suas credenciais no HeyGen."
+            )
+        
+        logger.info(f"[SAVE_API_KEY] Validação OK. Créditos: {validation_result.get('credits_remaining', 0)}")
+        
+        # 2. Criptografar API Key
+        logger.info("[SAVE_API_KEY] Criptografando API Key...")
+        encrypted_api_key = encryption_service.encrypt(credentials.api_key)
+        logger.info(f"[SAVE_API_KEY] API Key criptografada (primeiros 20 chars): {encrypted_api_key[:20]}...")
+        
+        # 3. Salvar apenas API Key e créditos (avatar/voz ficam NULL)
+        update_data = {
+            "heygen_api_key": encrypted_api_key,
+            "heygen_credits_total": validation_result.get("credits_remaining", 0),
+            "heygen_credits_used": 0
+        }
+        logger.info(f"[SAVE_API_KEY] Dados para update: {update_data}")
+        
+        # 4. Executar UPDATE no banco
+        logger.info("[SAVE_API_KEY] Executando UPDATE no banco...")
+        def _sync_update():
+            result = supabase.table("organizations").update(update_data).eq("id", org_id).execute()
+            logger.info(f"[SAVE_API_KEY] Resultado do UPDATE: {result}")
+            return result
+        
+        update_result = await asyncio.to_thread(_sync_update)
+        logger.info(f"[SAVE_API_KEY] UPDATE concluído. Result data: {update_result.data if hasattr(update_result, 'data') else 'N/A'}")
+        
+        # 5. Verificar sucesso
+        if hasattr(update_result, 'data') and update_result.data:
+            logger.info(f"[SAVE_API_KEY] ✅ API Key salva com sucesso para organização {org_id}")
+        else:
+            logger.warning(f"[SAVE_API_KEY] ⚠️ UPDATE retornou vazio. Verificando se houve erro...")
+        
+        return {
+            "success": True,
+            "message": "API Key salva com sucesso. Agora você pode configurar seu avatar.",
+            "credits_remaining": validation_result.get("credits_remaining", 0)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[SAVE_API_KEY] ❌ ERRO CRÍTICO: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao salvar API Key. Tente novamente."
+        )
+
+
 @router.post("/heygen/wizard/avatars")
 async def get_heygen_avatars_wizard(
     credentials: HeyGenApiKeyOnly,
@@ -382,6 +473,154 @@ async def configure_heygen(
         raise HTTPException(
             status_code=500,
             detail="Erro ao configurar credenciais. Tente novamente"
+        )
+
+
+@router.post("/heygen/save-avatar")
+async def save_heygen_avatar(
+    data: Dict[str, str],
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Salva apenas o avatar_id do HeyGen (API Key já deve estar salva).
+    
+    Permite configuração em etapas.
+    
+    Requer plano Pro.
+    
+    Args:
+        data: Dict com avatar_id
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "success": true,
+            "message": "Avatar configurado com sucesso"
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key não estiver configurada ou avatar_id inválido
+        HTTPException 403: Se plano não for Pro
+    """
+    try:
+        avatar_id = data.get("avatar_id")
+        if not avatar_id:
+            raise HTTPException(
+                status_code=400,
+                detail="avatar_id é obrigatório"
+            )
+        
+        logger.info(f"[SAVE_AVATAR] Salvando avatar_id: {avatar_id} para org_id: {org_id}")
+        
+        # Verificar se API Key já está configurada
+        def _sync_select():
+            return supabase.table("organizations").select("heygen_api_key").eq("id", org_id).single().execute()
+        
+        org_data = await asyncio.to_thread(_sync_select)
+        data_result = org_data.data if hasattr(org_data, "data") else org_data.get("data")
+        
+        if not data_result or not data_result.get("heygen_api_key"):
+            raise HTTPException(
+                status_code=400,
+                detail="Configure sua API Key HeyGen antes de selecionar um avatar"
+            )
+        
+        # Salvar avatar_id
+        def _sync_update():
+            return supabase.table("organizations").update({
+                "heygen_avatar_id": avatar_id
+            }).eq("id", org_id).execute()
+        
+        await asyncio.to_thread(_sync_update)
+        logger.info(f"[SAVE_AVATAR] ✅ Avatar salvo com sucesso para organização {org_id}")
+        
+        return {
+            "success": True,
+            "message": "Avatar configurado com sucesso"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[SAVE_AVATAR] ❌ ERRO: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao salvar avatar. Tente novamente"
+        )
+
+
+@router.post("/heygen/save-voice")
+async def save_heygen_voice(
+    data: Dict[str, str],
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Salva apenas o voice_id do HeyGen (API Key já deve estar salva).
+    
+    Voz é OPCIONAL - sistema pode funcionar sem voz configurada.
+    
+    Requer plano Pro.
+    
+    Args:
+        data: Dict com voice_id
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "success": true,
+            "message": "Voz configurada com sucesso"
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key não estiver configurada ou voice_id inválido
+        HTTPException 403: Se plano não for Pro
+    """
+    try:
+        voice_id = data.get("voice_id")
+        if not voice_id:
+            raise HTTPException(
+                status_code=400,
+                detail="voice_id é obrigatório"
+            )
+        
+        logger.info(f"[SAVE_VOICE] Salvando voice_id: {voice_id} para org_id: {org_id}")
+        
+        # Verificar se API Key já está configurada
+        def _sync_select():
+            return supabase.table("organizations").select("heygen_api_key").eq("id", org_id).single().execute()
+        
+        org_data = await asyncio.to_thread(_sync_select)
+        data_result = org_data.data if hasattr(org_data, "data") else org_data.get("data")
+        
+        if not data_result or not data_result.get("heygen_api_key"):
+            raise HTTPException(
+                status_code=400,
+                detail="Configure sua API Key HeyGen antes de selecionar uma voz"
+            )
+        
+        # Salvar voice_id
+        def _sync_update():
+            return supabase.table("organizations").update({
+                "heygen_voice_id": voice_id
+            }).eq("id", org_id).execute()
+        
+        await asyncio.to_thread(_sync_update)
+        logger.info(f"[SAVE_VOICE] ✅ Voz salva com sucesso para organização {org_id}")
+        
+        return {
+            "success": True,
+            "message": "Voz configurada com sucesso"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[SAVE_VOICE] ❌ ERRO: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao salvar voz. Tente novamente"
         )
 
 
