@@ -97,6 +97,197 @@ async def validate_heygen_key(
         )
 
 
+@router.post("/heygen/wizard/avatars")
+async def get_heygen_avatars_wizard(
+    credentials: HeyGenApiKeyOnly,
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Lista avatares usando API Key fornecida (para uso no wizard).
+    
+    Requer plano Pro.
+    
+    Args:
+        credentials: API Key para autenticação
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "avatars": [
+                {
+                    "avatar_id": "avatar_123",
+                    "avatar_name": "John Professional",
+                    "preview_image_url": "https://...",
+                    "gender": "male"
+                }
+            ]
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key for inválida
+        HTTPException 403: Se plano não for Pro
+    """
+    try:
+        # Listar avatares usando a API Key fornecida
+        heygen_service = HeyGenService()
+        result = await heygen_service.get_avatars(credentials.api_key)
+        
+        if "error" in result:
+            raise HTTPException(
+                status_code=400,
+                detail="Erro ao listar avatares. Verifique sua API Key."
+            )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao listar avatares HeyGen (wizard): {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao listar avatares. Tente novamente"
+        )
+
+
+@router.post("/heygen/wizard/voices")
+async def get_heygen_voices_wizard(
+    credentials: HeyGenApiKeyOnly,
+    language: Optional[str] = None,
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Lista vozes usando API Key fornecida (para uso no wizard).
+    
+    Requer plano Pro.
+    
+    Args:
+        credentials: API Key para autenticação
+        language: Filtro opcional de idioma
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "voices": [
+                {
+                    "voice_id": "voice_456",
+                    "voice_name": "Maria Brazilian",
+                    "language": "pt",
+                    "gender": "female",
+                    "preview_audio_url": "https://..."
+                }
+            ]
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key for inválida
+        HTTPException 403: Se plano não for Pro
+    """
+    try:
+        # Listar vozes usando a API Key fornecida
+        heygen_service = HeyGenService()
+        result = await heygen_service.get_voices(credentials.api_key, language)
+        
+        if "error" in result:
+            raise HTTPException(
+                status_code=400,
+                detail="Erro ao listar vozes. Verifique sua API Key."
+            )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao listar vozes HeyGen (wizard): {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao listar vozes. Tente novamente"
+        )
+
+
+@router.post("/heygen/validate-key-old")
+async def validate_heygen_key_old(
+    credentials: HeyGenApiKeyOnly,
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Valida API Key do HeyGen sem salvar no banco.
+    
+    Requer plano Pro.
+    
+    Args:
+        credentials: Apenas API Key para validação
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "valid": true,
+            "credits_remaining": 150.5,
+            "plan": "pro"
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key for inválida
+        HTTPException 403: Se conta estiver suspensa
+        HTTPException 500: Se HeyGen estiver indisponível
+        HTTPException 408: Se timeout (3s)
+    """
+    try:
+        # Validar com timeout de 3 segundos
+        heygen_service = HeyGenService()
+        validation_result = await asyncio.wait_for(
+            heygen_service.test_credentials(credentials.api_key),
+            timeout=3.0
+        )
+        
+        if not validation_result.get("valid"):
+            # Mapear erro específico
+            error = validation_result.get("error", {})
+            error_code = error.get("code", "unknown")
+            
+            if error_code == "401":
+                raise HTTPException(
+                    status_code=400,
+                    detail="API Key inválida. Verifique suas credenciais no HeyGen."
+                )
+            elif error_code == "403":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Conta HeyGen suspensa. Entre em contato com o suporte do HeyGen."
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Erro ao validar API Key. Tente novamente."
+                )
+        
+        # Retornar resultado da validação
+        return {
+            "valid": True,
+            "credits_remaining": validation_result.get("credits_remaining", 0),
+            "plan": "pro"
+        }
+        
+    except asyncio.TimeoutError:
+        logger.error("Timeout ao validar API Key HeyGen")
+        raise HTTPException(
+            status_code=408,
+            detail="Tempo de conexão esgotado. Verifique sua conexão e tente novamente."
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao validar API Key HeyGen: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao validar API Key. Tente novamente."
+        )
+
+
 @router.put("/heygen")
 async def configure_heygen(
     credentials: HeyGenCredentials,

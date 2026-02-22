@@ -95,10 +95,14 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         throw new Error("Usuário não autenticado");
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/avatars`, {
+      // Usar endpoint do wizard que aceita API Key no body
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/wizard/avatars`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
+        body: JSON.stringify({ api_key: apiKey }),
       });
       
       if (!response.ok) {
@@ -126,10 +130,14 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         throw new Error("Usuário não autenticado");
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/voices`, {
+      // Usar endpoint do wizard que aceita API Key no body
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/wizard/voices`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
+        body: JSON.stringify({ api_key: apiKey }),
       });
       
       if (!response.ok) {
