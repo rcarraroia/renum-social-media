@@ -73,7 +73,7 @@ const ScheduleStep: React.FC<Props> = ({ platforms, descriptions, onSchedule, on
     if (mode === "ai" && !aiSuggestion && !loadingAi) {
       loadAiSuggestion();
     }
-  }, [mode, aiSuggestion, loadingAi, loadAiSuggestion]);
+  }, [mode, aiSuggestion, loadingAi]); // REMOVIDO loadAiSuggestion das dependências
 
   const handleSchedule = async () => {
     let scheduledAt: string | undefined;
