@@ -40,11 +40,14 @@ const AvatarCard: React.FC<AvatarCardProps> = ({
   const isSelected = selectedAvatarId === avatar.avatar_id;
 
   const handleSelectAvatar = () => {
+    console.log("[AVATAR_CARD] Avatar selecionado:", avatar.avatar_id, "-", avatar.avatar_name);
     onSelectAvatar(avatar.avatar_id);
     setShowVoiceSelector(true);
   };
 
   const handleSelectVoice = (voiceId: string) => {
+    const voice = voices.find((v) => v.voice_id === voiceId);
+    console.log("[AVATAR_CARD] Voz selecionada:", voiceId, "-", voice?.voice_name);
     onSelectVoice(voiceId);
     setShowVoiceSelector(false);
   };
