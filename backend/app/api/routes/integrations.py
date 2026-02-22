@@ -106,6 +106,9 @@ async def get_heygen_avatars_wizard(
     """
     Lista avatares usando API Key fornecida (para uso no wizard).
     
+    Por padrão, retorna apenas avatares PRIVADOS/CUSTOMIZADOS do usuário.
+    Isso evita carregar centenas de avatares públicos desnecessariamente.
+    
     Requer plano Pro.
     
     Args:
@@ -117,9 +120,10 @@ async def get_heygen_avatars_wizard(
             "avatars": [
                 {
                     "avatar_id": "avatar_123",
-                    "avatar_name": "John Professional",
+                    "avatar_name": "Meu Clone",
                     "preview_image_url": "https://...",
-                    "gender": "male"
+                    "gender": "male",
+                    "is_public": false
                 }
             ]
         }
@@ -129,15 +133,17 @@ async def get_heygen_avatars_wizard(
         HTTPException 403: Se plano não for Pro
     """
     try:
-        # Listar avatares usando a API Key fornecida
+        # Listar apenas avatares PRIVADOS (clones e customizados do usuário)
         heygen_service = HeyGenService()
-        result = await heygen_service.get_avatars(credentials.api_key)
+        result = await heygen_service.get_avatars(credentials.api_key, avatar_type="private")
         
         if "error" in result:
             raise HTTPException(
                 status_code=400,
                 detail="Erro ao listar avatares. Verifique sua API Key."
             )
+        
+        logger.info(f"Wizard: Listados {len(result.get('avatars', []))} avatares privados para org {org_id}")
         
         return result
         
@@ -315,32 +321,53 @@ async def configure_heygen(
         HTTPException 403: Se plano não for Pro
     """
     try:
+        logger.info(f"[HEYGEN_CONFIG] Iniciando configuração para org_id: {org_id}")
+        logger.info(f"[HEYGEN_CONFIG] Avatar ID: {credentials.avatar_id}, Voice ID: {credentials.voice_id}")
+        
         # Validar credenciais fazendo chamada de teste à API HeyGen
+        logger.info("[HEYGEN_CONFIG] Validando credenciais com HeyGen API...")
         heygen_service = HeyGenService()
         validation_result = await heygen_service.test_credentials(credentials.api_key)
         
         if not validation_result.get("valid"):
+            logger.error(f"[HEYGEN_CONFIG] Validação falhou: {validation_result}")
             raise HTTPException(
                 status_code=400,
                 detail="Credenciais HeyGen inválidas. Verifique sua API Key em Configurações"
             )
         
+        logger.info(f"[HEYGEN_CONFIG] Validação OK. Créditos: {validation_result.get('credits_remaining', 0)}")
+        
         # Criptografar API Key antes de salvar
+        logger.info("[HEYGEN_CONFIG] Criptografando API Key...")
         encrypted_api_key = encryption_service.encrypt(credentials.api_key)
+        logger.info(f"[HEYGEN_CONFIG] API Key criptografada (primeiros 20 chars): {encrypted_api_key[:20]}...")
+        
+        # Preparar dados para update
+        update_data = {
+            "heygen_api_key": encrypted_api_key,
+            "heygen_avatar_id": credentials.avatar_id,
+            "heygen_voice_id": credentials.voice_id,
+            "heygen_credits_total": validation_result.get("credits_remaining", 0),
+            "heygen_credits_used": 0
+        }
+        logger.info(f"[HEYGEN_CONFIG] Dados para update: {update_data}")
         
         # Salvar credenciais no banco
+        logger.info("[HEYGEN_CONFIG] Executando UPDATE no banco...")
         def _sync_update():
-            return supabase.table("organizations").update({
-                "heygen_api_key": encrypted_api_key,
-                "heygen_avatar_id": credentials.avatar_id,
-                "heygen_voice_id": credentials.voice_id,
-                "heygen_credits_total": validation_result.get("credits_remaining", 0),
-                "heygen_credits_used": 0
-            }).eq("id", org_id).execute()
+            result = supabase.table("organizations").update(update_data).eq("id", org_id).execute()
+            logger.info(f"[HEYGEN_CONFIG] Resultado do UPDATE: {result}")
+            return result
         
-        await asyncio.to_thread(_sync_update)
+        update_result = await asyncio.to_thread(_sync_update)
+        logger.info(f"[HEYGEN_CONFIG] UPDATE concluído. Result data: {update_result.data if hasattr(update_result, 'data') else 'N/A'}")
         
-        logger.info(f"Credenciais HeyGen configuradas para organização {org_id}")
+        # Verificar se o update foi bem-sucedido
+        if hasattr(update_result, 'data') and update_result.data:
+            logger.info(f"[HEYGEN_CONFIG] ✅ Credenciais salvas com sucesso para organização {org_id}")
+        else:
+            logger.warning(f"[HEYGEN_CONFIG] ⚠️ UPDATE retornou vazio. Verificando se houve erro...")
         
         return {
             "success": True,
@@ -351,7 +378,7 @@ async def configure_heygen(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao configurar credenciais HeyGen: {e}", exc_info=True)
+        logger.error(f"[HEYGEN_CONFIG] ❌ ERRO CRÍTICO: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Erro ao configurar credenciais. Tente novamente"
@@ -513,22 +540,30 @@ async def get_heygen_credits(
 
 @router.get("/heygen/avatars")
 async def get_heygen_avatars(
+    avatar_type: str = "private",
     org_id: str = Depends(get_current_organization),
     _: str = Depends(require_plan("pro"))
 ):
     """
     Lista avatares disponíveis na conta HeyGen.
     
+    Por padrão, retorna apenas avatares PRIVADOS/CUSTOMIZADOS do usuário.
+    
     Requer plano Pro.
+    
+    Args:
+        avatar_type: Tipo de avatares ("private", "public", "all")
+        org_id: ID da organização (injetado via dependency)
     
     Returns:
         {
             "avatars": [
                 {
                     "avatar_id": "avatar_123",
-                    "avatar_name": "John Professional",
+                    "avatar_name": "Meu Clone",
                     "preview_image_url": "https://...",
-                    "gender": "male"
+                    "gender": "male",
+                    "is_public": false
                 }
             ]
         }
@@ -556,9 +591,9 @@ async def get_heygen_avatars(
         # Descriptografar API Key
         api_key = encryption_service.decrypt(data["heygen_api_key"])
         
-        # Listar avatares
+        # Listar avatares com filtro de tipo
         heygen_service = HeyGenService()
-        result = await heygen_service.get_avatars(api_key)
+        result = await heygen_service.get_avatars(api_key, avatar_type=avatar_type)
         
         # Registrar chamada em api_logs
         def _sync_log():
@@ -570,6 +605,8 @@ async def get_heygen_avatars(
             }).execute()
         
         await asyncio.to_thread(_sync_log)
+        
+        logger.info(f"Listados {len(result.get('avatars', []))} avatares tipo '{avatar_type}' para org {org_id}")
         
         return result
         

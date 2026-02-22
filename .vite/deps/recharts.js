@@ -1,9 +1,9 @@
 import {
-  clsx_default
-} from "./chunk-KDVGFZWC.js";
-import {
   require_prop_types
 } from "./chunk-X3MDYGI3.js";
+import {
+  clsx_default
+} from "./chunk-KDVGFZWC.js";
 import {
   require_react_dom
 } from "./chunk-V2X5ZORR.js";

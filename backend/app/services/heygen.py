@@ -160,12 +160,16 @@ class HeyGenService:
                 **error_response
             }
 
-    async def get_avatars(self, api_key: str) -> Dict[str, Any]:
+    async def get_avatars(self, api_key: str, avatar_type: str = "private") -> Dict[str, Any]:
         """
-        Lista todos os avatares disponíveis na conta HeyGen.
+        Lista avatares disponíveis na conta HeyGen.
         
         Args:
             api_key: API Key do HeyGen
+            avatar_type: Tipo de avatares a listar:
+                - "private" (padrão): Apenas avatares customizados/clones do usuário
+                - "public": Apenas avatares públicos do HeyGen
+                - "all": Todos os avatares (privados + públicos)
             
         Returns:
             Dict com:
@@ -177,15 +181,23 @@ class HeyGenService:
             - avatar_name (str): Nome do avatar
             - preview_image_url (str): URL da imagem de preview
             - gender (str): Gênero do avatar (se disponível)
+            - is_public (bool): Se é avatar público ou privado
         """
         endpoint = "/v2/avatars"
         url = f"{self.BASE_URL}{endpoint}"
+        
+        # Adicionar query param para filtrar tipo de avatar
+        params = {}
+        if avatar_type in ["private", "public"]:
+            params["type"] = avatar_type
+        # Se avatar_type == "all", não adiciona filtro (retorna todos)
         
         try:
             async with httpx.AsyncClient(timeout=self.TIMEOUT) as client:
                 response = await client.get(
                     url,
-                    headers=self._get_headers(api_key)
+                    headers=self._get_headers(api_key),
+                    params=params
                 )
                 response.raise_for_status()
                 
@@ -199,8 +211,11 @@ class HeyGenService:
                         "avatar_id": avatar.get("avatar_id"),
                         "avatar_name": avatar.get("avatar_name"),
                         "preview_image_url": avatar.get("preview_image_url"),
-                        "gender": avatar.get("gender")
+                        "gender": avatar.get("gender"),
+                        "is_public": avatar_type == "public" if avatar_type != "all" else avatar.get("is_public", False)
                     })
+                
+                logger.info(f"Listados {len(avatars)} avatares do tipo '{avatar_type}'")
                 
                 return {
                     "avatars": avatars

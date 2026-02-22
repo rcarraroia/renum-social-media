@@ -401,10 +401,6 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
    * Renderiza o Passo 2: Seleção de Avatar + Voz
    */
   const renderStep2 = () => {
-    // Separar clones e avatares públicos
-    const clones = avatars.filter((a) => a.is_clone || a.avatar_name?.toLowerCase().includes("clone"));
-    const publicAvatars = avatars.filter((a) => !a.is_clone && !a.avatar_name?.toLowerCase().includes("clone"));
-
     return (
       <div className="space-y-6">
         <div>
@@ -418,53 +414,49 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         {loadingAvatars && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">Carregando avatares...</span>
+            <span className="ml-3 text-muted-foreground">Carregando seus avatares...</span>
           </div>
         )}
 
         {/* Avatares carregados */}
         {!loadingAvatars && avatars.length > 0 && (
           <div className="space-y-6">
-            {/* Seção de Clones */}
-            {clones.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-card-foreground flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    Seus Clones
-                  </h3>
-                  <Button
-                    onClick={loadAvatars}
-                    disabled={loadingAvatars}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Atualizar
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {clones.map((avatar) => (
-                    <AvatarCard
-                      key={avatar.avatar_id}
-                      avatar={avatar}
-                      voices={voices}
-                      selectedAvatarId={selectedAvatarId}
-                      selectedVoiceId={selectedVoiceId}
-                      onSelectAvatar={setSelectedAvatarId}
-                      onSelectVoice={setSelectedVoiceId}
-                      loadingVoices={loadingVoices}
-                    />
-                  ))}
-                </div>
+            {/* Seção de Avatares Personalizados */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-card-foreground flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Seus Avatares Personalizados
+                </h3>
+                <Button
+                  onClick={loadAvatars}
+                  disabled={loadingAvatars}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Atualizar
+                </Button>
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {avatars.map((avatar) => (
+                  <AvatarCard
+                    key={avatar.avatar_id}
+                    avatar={avatar}
+                    voices={voices}
+                    selectedAvatarId={selectedAvatarId}
+                    selectedVoiceId={selectedVoiceId}
+                    onSelectAvatar={setSelectedAvatarId}
+                    onSelectVoice={setSelectedVoiceId}
+                    loadingVoices={loadingVoices}
+                  />
+                ))}
+              </div>
+            </div>
 
             {/* Card "Criar Clone" */}
             <div>
-              {clones.length > 0 && (
-                <h3 className="text-lg font-semibold text-card-foreground mb-3">Criar Novo Clone</h3>
-              )}
+              <h3 className="text-lg font-semibold text-card-foreground mb-3">Criar Novo Clone</h3>
               <button
                 onClick={() => setShowCloneGuide(true)}
                 className="w-full p-6 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors group"
@@ -482,41 +474,42 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
                 </div>
               </button>
             </div>
-
-            {/* Seção de Avatares Públicos */}
-            {publicAvatars.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-card-foreground mb-3 flex items-center gap-2">
-                  <User className="w-5 h-5 text-muted-foreground" />
-                  Avatares Públicos
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {publicAvatars.map((avatar) => (
-                    <AvatarCard
-                      key={avatar.avatar_id}
-                      avatar={avatar}
-                      voices={voices}
-                      selectedAvatarId={selectedAvatarId}
-                      selectedVoiceId={selectedVoiceId}
-                      onSelectAvatar={setSelectedAvatarId}
-                      onSelectVoice={setSelectedVoiceId}
-                      loadingVoices={loadingVoices}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
         {/* Estado vazio */}
         {!loadingAvatars && avatars.length === 0 && (
-          <div className="text-center py-12">
-            <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Nenhum avatar encontrado</p>
-            <Button onClick={() => setShowCloneGuide(true)} variant="default">
-              Criar Primeiro Clone
+          <div className="text-center py-12 space-y-6">
+            <div className="flex flex-col items-center gap-4">
+              <User className="w-16 h-16 text-muted-foreground" />
+              <div>
+                <p className="text-lg font-semibold text-card-foreground mb-2">
+                  Nenhum avatar personalizado encontrado
+                </p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Você ainda não criou nenhum clone ou avatar personalizado no HeyGen.
+                  Crie seu primeiro avatar para começar a gerar vídeos personalizados.
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setShowCloneGuide(true)} variant="default" size="lg">
+              <Sparkles className="w-5 h-5 mr-2" />
+              Criar Meu Primeiro Clone
             </Button>
+            <div className="pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-3">
+                Ou acesse o painel do HeyGen para criar seu avatar:
+              </p>
+              <a
+                href="https://app.heygen.com/avatar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/90 font-medium transition-colors"
+              >
+                Abrir HeyGen Studio
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         )}
 

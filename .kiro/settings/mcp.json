@@ -33,6 +33,17 @@
       },
       "disabled": false,
       "autoApprove": []
+    },
+    "TestSprite": {
+      "command": "npx",
+      "args": [
+        "@testsprite/testsprite-mcp@latest"
+      ],
+      "env": {
+        "API_KEY": "sk-user-E_ItKOZNQDE9DsZUI8s4m1e1A_8sDgF9ldRHythA1eT5Iu9FgJTTe_gNAjqFEcMrS3EQM7AFGnjkulAIwnqylZNlbirXzyOU4BAno23GrGhehTwZxNEPs82BB0gIzNzWNH0"
+      },
+      "disabled": false,
+      "autoApprove": []
     }
   }
 }
