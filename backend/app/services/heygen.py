@@ -194,6 +194,7 @@ class HeyGenService:
         
         try:
             async with httpx.AsyncClient(timeout=self.TIMEOUT) as client:
+                logger.info(f"🔵 Chamando HeyGen API: {url} com params: {params}")
                 response = await client.get(
                     url,
                     headers=self._get_headers(api_key),
@@ -203,6 +204,26 @@ class HeyGenService:
                 
                 data = response.json()
                 avatars_data = data.get("data", {}).get("avatars", [])
+                
+                logger.info(f"🟢 HeyGen retornou {len(avatars_data)} avatares (antes do filtro)")
+                
+                # Log dos primeiros 3 avatares para debug
+                for i, avatar in enumerate(avatars_data[:3]):
+                    logger.info(f"  Avatar {i+1}: {avatar.get('avatar_name')} - is_public: {avatar.get('is_public', 'N/A')}")
+                
+                # Log dos primeiros 3 avatares para debug
+                for i, avatar in enumerate(avatars_data[:3]):
+                    logger.info(f"  Avatar {i+1}: {avatar.get('avatar_name')} - is_public: {avatar.get('is_public', 'N/A')}")
+                
+                # FILTRO MANUAL: Se API não respeitar o parâmetro type, filtrar manualmente
+                if avatar_type == "private":
+                    # Filtrar apenas avatares privados (is_public == False ou não tem campo is_public)
+                    avatars_data = [a for a in avatars_data if not a.get("is_public", False)]
+                    logger.info(f"🟡 Após filtro manual 'private': {len(avatars_data)} avatares")
+                elif avatar_type == "public":
+                    # Filtrar apenas avatares públicos (is_public == True)
+                    avatars_data = [a for a in avatars_data if a.get("is_public", False)]
+                    logger.info(f"🟡 Após filtro manual 'public': {len(avatars_data)} avatares")
                 
                 # Formatar lista de avatares
                 avatars = []
