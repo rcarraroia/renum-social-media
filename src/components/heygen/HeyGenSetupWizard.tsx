@@ -241,10 +241,8 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         setCreditsRemaining(data.credits_remaining ?? null);
         showSuccess("API Key válida! Avançando para seleção de avatar...");
         
-        // Avançar para o Passo 2 após 1 segundo
-        setTimeout(() => {
-          setCurrentStep(2);
-        }, 1000);
+        // Avançar para o Passo 2 imediatamente
+        setCurrentStep(2);
       } else {
         setValidationState("error");
         const errorMessage = data.error || "API Key inválida. Verifique suas credenciais.";
