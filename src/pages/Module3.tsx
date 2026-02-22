@@ -86,6 +86,7 @@ const Module3Page: React.FC = () => {
   const [testStep, setTestStep] = useState(1);
   const [showSchedule, setShowSchedule] = useState(false);
   const [testVideoUrl, setTestVideoUrl] = useState<string | null>(null);
+  const [showWizard, setShowWizard] = useState(false); // MOVIDO PARA CÁ
 
   // For testing: override the hook's state with local test state
   const effectiveInput = testMode ? testStep === 1 : input;
@@ -272,7 +273,7 @@ const Module3Page: React.FC = () => {
   }
 
   // HeyGen is configured, show the normal module
-  const [showWizard, setShowWizard] = useState(false);
+  // (showWizard já foi declarado no topo)
 
   // If user wants to change avatar, show wizard starting at step 2
   if (showWizard) {
