@@ -25,6 +25,278 @@ NUNCA comentar código, remover funcionalidades ou simplificar para fazer build 
 ### **5. DOCUMENTAÇÃO CONSOLIDADA**
 Não crie múltiplos documentos sobre o mesmo assunto. Se precisar documentar algo, crie UM único arquivo consolidado. Nunca crie versões separadas como 'checklist', 'quick reference', 'architecture' e 'setup' para o mesmo tema — coloque tudo em um só lugar, na pasta docs de cada diretório.
 
+### **6. INTEGRIDADE É INEGOCIÁVEL**
+Quando você não conseguir executar uma tarefa por qualquer motivo (falta de ferramenta, permissão negada, erro de ambiente, limitação técnica), você DEVE:
+
+- ✅ **PARAR imediatamente**
+- ✅ **REPORTAR o problema com clareza:** o que tentou fazer, qual erro ocorreu, por que não conseguiu
+- ✅ **PEDIR ajuda ou orientação antes de prosseguir**
+
+**VOCÊ NUNCA DEVE:**
+
+- ❌ **Marcar uma task como concluída sem ter executado e validado**
+- ❌ **Reportar sucesso em algo que não foi feito**
+- ❌ **Fingir que um arquivo foi criado sem confirmar sua existência**
+- ❌ **Simular execução de testes sem ter resultado real**
+- ❌ **Mentir sobre o status de uma tarefa, mesmo com boa intenção**
+
+**Mentir sobre o status de uma tarefa causa danos reais ao projeto e quebra a confiança. Isso é inaceitável em qualquer circunstância.**
+
+---
+
+## 🎨 DESIGN SYSTEM E FERRAMENTAS DE UI/UX
+
+### **REGRA CRÍTICA: SEMPRE CONSULTE O DESIGN SYSTEM ANTES DE CRIAR/MODIFICAR UI**
+
+O projeto possui um design system completo e documentado que DEVE ser seguido rigorosamente em qualquer implementação de interface.
+
+### **📚 Documentação Obrigatória**
+
+#### **Design System Principal**
+- **Localização:** `.context/docs/design-system.md`
+- **Conteúdo:**
+  - Variáveis CSS (tokens de design)
+  - Componentes UI (shadcn/ui)
+  - Mapeamento de cores (hardcoded → variáveis)
+  - Padrões de espaçamento, tipografia, bordas
+  - Estados interativos (hover, focus, disabled)
+  - Ícones (lucide-react)
+  - Responsividade
+  - Checklist de implementação
+  - Exemplos práticos
+
+**VOCÊ DEVE CONSULTAR `.context/docs/design-system.md` ANTES DE:**
+- Criar qualquer componente de interface
+- Modificar componentes existentes
+- Escolher cores, espaçamentos ou tipografia
+- Implementar estados interativos (hover, focus)
+- Adicionar ícones ou elementos visuais
+
+### **🧰 Ferramentas Especializadas Disponíveis**
+
+O projeto possui ferramentas especializadas organizadas em 3 pastas principais:
+
+#### **1. `.agent/` - Workflows e Skills**
+**Localização:** `E:\PROJETOS SITE\repositorios\renum-social-media\.agent\`
+
+**Workflows disponíveis** (`.agent/workflows/`):
+- `ui-ux-pro-max.md` - Design UI/UX avançado
+- `create.md` - Criação de novos recursos
+- `debug.md` - Debugging sistemático
+- `enhance.md` - Melhorias de código
+- `plan.md` - Planejamento de features
+- `preview.md` - Visualização de mudanças
+- `test.md` - Execução de testes
+
+**Skills disponíveis** (`.agent/skills/`):
+- `tailwind-patterns/` - Padrões Tailwind CSS e design system
+- `web-design-guidelines/` - Guidelines de design e acessibilidade
+- `systematic-debugging/` - Metodologia de debugging
+- `testing-patterns/` - Padrões de teste
+- `tdd-workflow/` - Test-Driven Development
+- `webapp-testing/` - Testes E2E com Playwright
+- `vulnerability-scanner/` - Scan de segurança
+
+#### **2. `.agents/` - Skills Avançados**
+**Localização:** `E:\PROJETOS SITE\repositorios\renum-social-media\.agents\`
+
+**Skills disponíveis** (`.agents/skills/`):
+- `ui-ux-pro-max/` - Design UI/UX profissional avançado
+
+#### **3. `.context/` - Documentação e Agentes Especializados**
+**Localização:** `E:\PROJETOS SITE\repositorios\renum-social-media\.context\`
+
+**Documentação** (`.context/docs/`):
+- `design-system.md` - **DOCUMENTO PRINCIPAL DE DESIGN**
+- `architecture.md` - Arquitetura do sistema
+- `development-workflow.md` - Workflow de desenvolvimento
+- `testing-strategy.md` - Estratégia de testes
+- `security.md` - Práticas de segurança
+- `tooling.md` - Ferramentas utilizadas
+
+**Agentes especializados** (`.context/agents/`):
+- `frontend-specialist.md` - Especialista em React/TypeScript/UI
+- `feature-developer.md` - Desenvolvimento end-to-end
+- `architect-specialist.md` - Arquitetura de software
+- `code-reviewer.md` - Revisão de código
+- `test-writer.md` - Testes unitários e integração
+- `bug-fixer.md` - Debugging sistemático
+- `documentation-writer.md` - Documentação técnica
+- `security-auditor.md` - Auditoria de segurança
+- `performance-optimizer.md` - Otimização de performance
+
+**Skills especializados** (`.context/skills/`):
+- `api-design/` - Design de APIs
+- `bug-investigation/` - Investigação de bugs
+- `code-review/` - Revisão de código
+- `documentation/` - Documentação
+- `feature-breakdown/` - Quebra de features
+- `refactoring/` - Refatoração
+- `security-audit/` - Auditoria de segurança
+- `test-generation/` - Geração de testes
+
+### **📋 PROCESSO OBRIGATÓRIO PARA IMPLEMENTAÇÃO DE UI**
+
+#### **ANTES DE IMPLEMENTAR QUALQUER COMPONENTE UI:**
+
+1. **✅ CONSULTAR DESIGN SYSTEM**
+   ```
+   □ Ler .context/docs/design-system.md
+   □ Identificar variáveis CSS a usar (cores, espaçamentos)
+   □ Verificar componentes shadcn/ui disponíveis
+   □ Revisar padrões de tipografia e bordas
+   □ Consultar exemplos práticos similares
+   ```
+
+2. **✅ VERIFICAR FERRAMENTAS DISPONÍVEIS**
+   ```
+   □ Consultar .agent/workflows/ para workflows relevantes
+   □ Consultar .agent/skills/ para skills aplicáveis
+   □ Consultar .context/agents/ para agentes especializados
+   □ Consultar .context/skills/ para metodologias
+   ```
+
+3. **✅ USAR AGENTES ESPECIALIZADOS**
+   ```
+   □ Para UI/UX: frontend-specialist.md ou ui-ux-pro-max/
+   □ Para features: feature-developer.md
+   □ Para revisão: code-reviewer.md
+   ```
+
+4. **✅ IMPLEMENTAR SEGUINDO O DESIGN SYSTEM**
+   ```
+   □ Usar variáveis CSS ao invés de cores hardcoded
+   □ Usar componentes shadcn/ui quando disponíveis
+   □ Seguir padrões de espaçamento (p-6 para cards)
+   □ Usar font-semibold ao invés de font-bold
+   □ Adicionar transition-colors em elementos interativos
+   ```
+
+5. **✅ VALIDAR CONSISTÊNCIA**
+   ```
+   □ Executar getDiagnostics nos arquivos modificados
+   □ Confirmar zero erros de TypeScript/ESLint
+   □ Verificar se todas as cores são variáveis CSS
+   □ Verificar se todos os botões usam componente Button
+   □ Verificar se modais usam Dialog do shadcn/ui
+   ```
+
+### **❌ COMPORTAMENTOS ABSOLUTAMENTE PROIBIDOS EM UI:**
+
+1. **NUNCA usar cores hardcoded**
+   ```tsx
+   ❌ ERRADO: className="bg-indigo-600 text-white"
+   ✅ CORRETO: className="bg-primary text-primary-foreground"
+   ```
+
+2. **NUNCA criar botões customizados**
+   ```tsx
+   ❌ ERRADO: <button className="px-6 py-3 bg-indigo-600...">
+   ✅ CORRETO: <Button variant="default">
+   ```
+
+3. **NUNCA criar modais customizados**
+   ```tsx
+   ❌ ERRADO: <div className="fixed inset-0 bg-black/50...">
+   ✅ CORRETO: <Dialog>...</Dialog>
+   ```
+
+4. **NUNCA usar font-bold**
+   ```tsx
+   ❌ ERRADO: className="font-bold"
+   ✅ CORRETO: className="font-semibold"
+   ```
+
+5. **NUNCA esquecer transições**
+   ```tsx
+   ❌ ERRADO: className="hover:bg-accent"
+   ✅ CORRETO: className="hover:bg-accent transition-colors"
+   ```
+
+### **✅ CHECKLIST DE VALIDAÇÃO DE UI**
+
+**ANTES DE MARCAR QUALQUER TASK DE UI COMO CONCLUÍDA:**
+
+- [ ] Consultei `.context/docs/design-system.md`?
+- [ ] Verifiquei ferramentas em `.agent/`, `.agents/` e `.context/`?
+- [ ] Usei agentes especializados quando aplicável?
+- [ ] Todas as cores são variáveis CSS (sem hardcoded)?
+- [ ] Todos os botões usam componente `Button`?
+- [ ] Todos os modais usam componente `Dialog`?
+- [ ] Usei `font-semibold` ao invés de `font-bold`?
+- [ ] Usei `text-muted-foreground` ao invés de `text-slate-600`?
+- [ ] Usei `border-border` ao invés de `border-slate-300`?
+- [ ] Adicionei `transition-colors` em elementos interativos?
+- [ ] Executei `getDiagnostics` e confirmei zero erros?
+- [ ] Validei consistência visual com o resto da aplicação?
+
+**SE QUALQUER RESPOSTA FOR "NÃO":**
+**❌ NÃO MARCAR COMO CONCLUÍDA - CORRIGIR ANTES DE PROSSEGUIR**
+
+### **📖 EXEMPLOS DE USO CORRETO**
+
+#### **Exemplo 1: Criar Card com Botão**
+```tsx
+// 1. Consultar design-system.md
+// 2. Usar componentes shadcn/ui
+// 3. Usar variáveis CSS
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Título</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p className="text-sm text-muted-foreground">Descrição</p>
+    <Button variant="default" className="mt-4">
+      Ação
+    </Button>
+  </CardContent>
+</Card>
+```
+
+#### **Exemplo 2: Criar Modal**
+```tsx
+// 1. Consultar design-system.md
+// 2. Usar Dialog do shadcn/ui
+// 3. Usar variáveis CSS
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+<Dialog open={isOpen} onOpenChange={setIsOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Título</DialogTitle>
+    </DialogHeader>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Conteúdo</p>
+    </div>
+    <div className="flex gap-3 pt-4">
+      <Button variant="outline" onClick={() => setIsOpen(false)}>
+        Cancelar
+      </Button>
+      <Button variant="default">
+        Confirmar
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+```
+
+### **🎯 COMPROMISSO ADICIONAL PARA UI/UX**
+
+**EU, KIRO AI, ME COMPROMETO A:**
+
+19. ✅ **SEMPRE consultar `.context/docs/design-system.md` antes de criar/modificar UI**
+20. ✅ **SEMPRE verificar ferramentas em `.agent/`, `.agents/` e `.context/` no início de tarefas**
+21. ✅ **SEMPRE usar componentes shadcn/ui ao invés de criar customizados**
+22. ✅ **SEMPRE usar variáveis CSS ao invés de cores hardcoded**
+23. ✅ **SEMPRE validar consistência com design system antes de marcar task como concluída**
+24. ✅ **NUNCA marcar task de UI como concluída sem passar no checklist de validação**
+
 ---
 
 ## 📋 REGRA 1: ANÁLISE PREVENTIVA OBRIGATÓRIA
@@ -322,6 +594,15 @@ TESTES DIRECIONADOS:
 13. ✅ **NUNCA apresentar estimativas de tempo ou custo**
 14. ✅ **SEMPRE verificar banco de dados real via Supabase Power**
 15. ✅ **NUNCA confiar apenas em arquivos de migration**
+16. ✅ **NUNCA mentir sobre o status de tarefas ou resultados**
+17. ✅ **SEMPRE reportar falhas e limitações com honestidade**
+18. ✅ **PARAR e pedir ajuda quando não conseguir executar algo**
+19. ✅ **SEMPRE consultar `.context/docs/design-system.md` antes de criar/modificar UI**
+20. ✅ **SEMPRE verificar ferramentas em `.agent/`, `.agents/` e `.context/` no início de tarefas**
+21. ✅ **SEMPRE usar componentes shadcn/ui ao invés de criar customizados**
+22. ✅ **SEMPRE usar variáveis CSS ao invés de cores hardcoded**
+23. ✅ **SEMPRE validar consistência com design system antes de marcar task como concluída**
+24. ✅ **NUNCA marcar task de UI como concluída sem passar no checklist de validação**
 
 ---
 

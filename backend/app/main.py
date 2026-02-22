@@ -90,7 +90,7 @@ register_logging_middlewares(app)
 register_error_handlers(app)
 
 app.include_router(health.router, prefix="/health", tags=["Health"])
-app.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
+app.include_router(integrations.router, prefix="/api/integrations", tags=["Integrations"])
 app.include_router(analytics.router, tags=["Analytics"])
 app.include_router(assistant.router, tags=["AI Assistant"])
 app.include_router(leads.router, prefix="/api", tags=["Leads"])

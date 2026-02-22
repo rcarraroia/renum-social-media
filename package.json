@@ -76,7 +76,7 @@
   "devDependencies": {
     "@dyad-sh/react-vite-component-tagger": "latest",
     "@eslint/js": "latest",
-    "@playwright/test": "^1.40.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",

@@ -6,7 +6,7 @@ from app.services.heygen import HeyGenService
 from app.services.encryption import encryption_service
 from app.database import supabase
 from app.utils.logger import get_logger
-from app.models.heygen import HeyGenCredentials
+from app.models.heygen import HeyGenCredentials, HeyGenApiKeyOnly
 import asyncio
 
 router = APIRouter()
@@ -16,6 +16,86 @@ logger = get_logger("integrations")
 # ============================================================================
 # HeyGen Integration Endpoints (Módulo 3 - AvatarAI)
 # ============================================================================
+
+@router.post("/heygen/validate-key")
+async def validate_heygen_key(
+    credentials: HeyGenApiKeyOnly,
+    org_id: str = Depends(get_current_organization),
+    _: str = Depends(require_plan("pro"))
+):
+    """
+    Valida API Key do HeyGen sem salvar no banco.
+    
+    Requer plano Pro.
+    
+    Args:
+        credentials: Apenas API Key para validação
+        org_id: ID da organização (injetado via dependency)
+    
+    Returns:
+        {
+            "valid": true,
+            "credits_remaining": 150.5,
+            "plan": "pro"
+        }
+    
+    Raises:
+        HTTPException 400: Se API Key for inválida
+        HTTPException 403: Se conta estiver suspensa
+        HTTPException 500: Se HeyGen estiver indisponível
+        HTTPException 408: Se timeout (3s)
+    """
+    try:
+        # Validar com timeout de 3 segundos
+        heygen_service = HeyGenService()
+        validation_result = await asyncio.wait_for(
+            heygen_service.test_credentials(credentials.api_key),
+            timeout=3.0
+        )
+        
+        if not validation_result.get("valid"):
+            # Mapear erro específico
+            error = validation_result.get("error", {})
+            error_code = error.get("code", "unknown")
+            
+            if error_code == "401":
+                raise HTTPException(
+                    status_code=400,
+                    detail="API Key inválida. Verifique suas credenciais no HeyGen."
+                )
+            elif error_code == "403":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Conta HeyGen suspensa. Entre em contato com o suporte do HeyGen."
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Erro ao validar API Key. Tente novamente."
+                )
+        
+        # Retornar resultado da validação
+        return {
+            "valid": True,
+            "credits_remaining": validation_result.get("credits_remaining", 0),
+            "plan": "pro"
+        }
+        
+    except asyncio.TimeoutError:
+        logger.error("Timeout ao validar API Key HeyGen")
+        raise HTTPException(
+            status_code=408,
+            detail="Tempo de conexão esgotado. Verifique sua conexão e tente novamente."
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao validar API Key HeyGen: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao validar API Key. Tente novamente."
+        )
+
 
 @router.put("/heygen")
 async def configure_heygen(

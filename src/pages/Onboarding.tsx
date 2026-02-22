@@ -8,11 +8,12 @@ import MainLayout from "@/components/layout/MainLayout";
 import SocialAccountCard from "../components/settings/SocialAccountCard";
 
 /**
- * Onboarding restructured:
+ * Onboarding simplificado:
  * Step 1: Profile (name + profile selector)
  * Step 2: Connect Socials (can skip)
- * Step 3: HeyGen config (only for Pro)
- * Step 4: Done
+ * Step 3: Done
+ * 
+ * HeyGen foi removido do onboarding e movido para o Module3 (AvatarAI)
  */
 
 const SOCIAL_PLATFORMS = ["linkedin", "x", "instagram", "tiktok", "facebook", "youtube"];
@@ -30,13 +31,6 @@ const Onboarding: React.FC = () => {
   // Step 2 social connections
   const [socialAccounts, setSocialAccounts] = useState<Record<string, { connected: boolean; accountName?: string | null }>>({});
   const [socialLoading, setSocialLoading] = useState<Record<string, boolean>>({});
-
-  // Step 3 HeyGen
-  const [heygenApiKey, setHeygenApiKey] = useState("");
-  const [heygenAvatarId, setHeygenAvatarId] = useState("");
-  const [heygenVoiceId, setHeygenVoiceId] = useState("");
-  const [heygenTesting, setHeygenTesting] = useState(false);
-  const [heygenConfigured, setHeygenConfigured] = useState(false);
 
   const orgId = user?.organization_id;
   const userId = user?.id;
@@ -195,38 +189,6 @@ const Onboarding: React.FC = () => {
     }
   };
 
-  const handleHeygenTest = async () => {
-    if (!heygenApiKey || heygenApiKey.trim() === "") {
-      showError("API Key do HeyGen não pode estar vazia");
-      return;
-    }
-    setHeygenTesting(true);
-    try {
-      const res = await fetch("/api/integrations/heygen", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          api_key: heygenApiKey, 
-          avatar_id: heygenAvatarId || undefined, 
-          voice_id: heygenVoiceId || undefined 
-        }),
-      });
-      const j = await res.json();
-      if (res.ok && j?.success) {
-        setHeygenConfigured(true);
-        showSuccess("Conexão HeyGen válida!");
-      } else {
-        setHeygenConfigured(false);
-        showError(j?.detail || j?.message || "Falha ao testar HeyGen");
-      }
-    } catch (e) {
-      console.error(e);
-      showError("Erro ao testar HeyGen");
-    } finally {
-      setHeygenTesting(false);
-    }
-  };
-
   const handleCompleteProfiles = async () => {
     if (!userId) {
       showError("Usuário não encontrado");
@@ -248,8 +210,6 @@ const Onboarding: React.FC = () => {
     navigate("/dashboard");
   };
 
-  const userPlan = (user?.organization?.plan as "free" | "starter" | "pro") ?? "free";
-
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-50 flex items-start justify-center p-4">
@@ -259,8 +219,7 @@ const Onboarding: React.FC = () => {
             <div className="flex gap-2 items-center overflow-auto">
               <div className={`px-3 py-1 rounded ${step === 1 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>1. Perfil</div>
               <div className={`px-3 py-1 rounded ${step === 2 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>2. Conectar Redes</div>
-              <div className={`px-3 py-1 rounded ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Avatar AI</div>
-              <div className={`px-3 py-1 rounded ${step === 4 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>4. Pronto</div>
+              <div className={`px-3 py-1 rounded ${step === 3 ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>3. Pronto</div>
             </div>
           </div>
 
@@ -335,70 +294,29 @@ const Onboarding: React.FC = () => {
           )}
 
           {step === 3 && (
-            <div>
-              <h3 className="text-xl font-semibold">Passo 3: Avatar AI (HeyGen)</h3>
-              {userPlan !== "pro" ? (
-                <div className="mt-4 p-4 border rounded">
-                  <div className="text-lg font-medium">Recursos Pro</div>
-                  <div className="text-sm text-slate-500 mt-2">Crie vídeos com avatar digital usando HeyGen. Faça upgrade para o Plano Pro para acessar.</div>
-                  <div className="mt-4">
-                    <button onClick={() => navigate("/settings?tab=plan")} className="px-4 py-2 bg-indigo-600 text-white rounded">Fazer Upgrade →</button>
-                    <button onClick={() => updateStep(4)} className="ml-2 px-4 py-2 border rounded">Pular</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  <p className="text-sm text-slate-500">Conecte sua conta HeyGen para gerar vídeos com avatar.</p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-sm">API Key</label>
-                      <input type="password" value={heygenApiKey} onChange={(e) => setHeygenApiKey(e.target.value)} className="mt-1 w-full rounded border p-2" />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm">Avatar ID</label>
-                      <input value={heygenAvatarId} onChange={(e) => setHeygenAvatarId(e.target.value)} className="mt-1 w-full rounded border p-2" />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm">Voice ID</label>
-                      <input value={heygenVoiceId} onChange={(e) => setHeygenVoiceId(e.target.value)} className="mt-1 w-full rounded border p-2" />
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={handleHeygenTest} disabled={heygenTesting} className="px-4 py-2 bg-indigo-600 text-white rounded">
-                      {heygenTesting ? "Testando..." : "Testar Conexão"}
-                    </button>
-
-                    <button onClick={() => { alert("HeyGen wizard (placeholder)"); }} className="px-4 py-2 border rounded">Como obter essas informações?</button>
-                    <button onClick={() => updateStep(4)} className="ml-auto px-4 py-2 border rounded">Pular</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 4 && (
             <div className="text-center">
               <div className="text-4xl">🎉</div>
               <h3 className="text-2xl font-bold mt-2">Configuração Completa!</h3>
-              <p className="text-slate-600 mt-2">Resumo rápido do que foi configurado:</p>
+              <p className="text-slate-600 mt-2">Seu perfil está configurado e pronto para uso.</p>
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-md mx-auto">
+                <div className="p-3 border rounded">
+                  <div className="font-medium">Perfis selecionados</div>
+                  <div className="text-sm text-slate-500 mt-2">{selectedProfiles.length} perfil(is)</div>
+                </div>
+
                 <div className="p-3 border rounded">
                   <div className="font-medium">Redes conectadas</div>
                   <div className="text-sm text-slate-500 mt-2">{Object.values(socialAccounts || {}).filter((s) => s.connected).length} conectadas</div>
                 </div>
+              </div>
 
-                <div className="p-3 border rounded">
-                  <div className="font-medium">HeyGen configurado</div>
-                  <div className="text-sm text-slate-500 mt-2">{heygenConfigured ? "Sim" : "Não"}</div>
-                </div>
+              <div className="mt-6 text-sm text-slate-500">
+                <p>Você pode configurar o Avatar AI (HeyGen) depois no módulo AvatarAI.</p>
               </div>
 
               <div className="mt-6 flex justify-center gap-3">
+                <button onClick={() => updateStep(2)} className="px-4 py-2 border rounded">← Voltar</button>
                 <button onClick={() => finishOnboarding()} className="px-6 py-2 bg-indigo-600 text-white rounded">Ir para Dashboard →</button>
               </div>
             </div>

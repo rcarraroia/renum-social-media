@@ -3,6 +3,8 @@ import MainLayout from "@/components/layout/MainLayout";
 import CreditsBadge from "@/components/modules/CreditsBadge";
 import VideoConfigStep from "@/components/modules/VideoConfigStep";
 import ScheduleStep from "@/components/modules/ScheduleStep";
+import HeyGenSetupWizard from "@/components/heygen/HeyGenSetupWizard";
+import { Button } from "@/components/ui/button";
 import { useAvatar } from "@/hooks/useAvatar";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -236,32 +238,134 @@ const Module3Page: React.FC = () => {
     );
   }
 
-  // For Pro users: always show the module.
-  // If HeyGen is not configured, show a non-blocking banner at top with link to settings.
-  const heygenMissing = !(heygenConfig?.apiKey && heygenConfig?.avatarId && heygenConfig?.voiceId);
+  // For Pro users: check if HeyGen is configured
+  // If not configured, show the setup wizard (replaces entire screen)
+  const heygenConfigured = !!(heygenConfig?.apiKey && heygenConfig?.avatarId && heygenConfig?.voiceId);
+
+  // If HeyGen is not configured, show the setup wizard
+  if (!heygenConfigured) {
+    return (
+      <MainLayout>
+        <div className="max-w-6xl mx-auto p-4">
+          <div className="mb-6">
+            <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              ← Voltar
+            </button>
+            <h1 className="text-2xl font-semibold text-card-foreground mt-2">🤖 AvatarAI — HeyGen</h1>
+            <p className="text-sm text-muted-foreground">Configure sua integração HeyGen para começar a gerar vídeos com avatares digitais.</p>
+          </div>
+
+          <HeyGenSetupWizard
+            onComplete={(data) => {
+              showSuccess("Configuração HeyGen salva com sucesso!");
+              // Recarregar a página para atualizar o estado
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }}
+            onCancel={() => navigate("/dashboard")}
+          />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // HeyGen is configured, show the normal module
+  const [showWizard, setShowWizard] = useState(false);
+
+  // If user wants to change avatar, show wizard starting at step 2
+  if (showWizard) {
+    return (
+      <MainLayout>
+        <div className="max-w-6xl mx-auto p-4">
+          <div className="mb-6">
+            <button 
+              onClick={() => setShowWizard(false)} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Voltar ao Módulo
+            </button>
+            <h1 className="text-2xl font-semibold text-card-foreground mt-2">🤖 Trocar Avatar e Voz</h1>
+            <p className="text-sm text-muted-foreground">Selecione um novo avatar e voz para seus vídeos.</p>
+          </div>
+
+          <HeyGenSetupWizard
+            onComplete={(data) => {
+              showSuccess("Configuração atualizada com sucesso!");
+              setShowWizard(false);
+              // Recarregar para atualizar o estado
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }}
+            onCancel={() => setShowWizard(false)}
+          />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-6 p-4">
-        {heygenMissing && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-            <div className="flex items-start justify-between">
+        {/* Header com informações HeyGen */}
+        <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Miniatura do avatar */}
+              {heygenConfig?.avatarPreviewUrl && (
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-primary">
+                  <img 
+                    src={heygenConfig.avatarPreviewUrl} 
+                    alt="Avatar selecionado"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              {!heygenConfig?.avatarPreviewUrl && (
+                <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center border-2 border-border">
+                  <span className="text-2xl">🤖</span>
+                </div>
+              )}
+
               <div>
-                <div className="font-medium">HeyGen não configurado</div>
-                <div className="text-sm text-slate-600">Para gerar vídeos com HeyGen, conecte sua conta em Settings → Integrações. Você ainda pode explorar o módulo sem as credenciais.</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={handleConfigureHeygen} className="px-3 py-2 rounded bg-indigo-600 text-white">Ir para Settings</button>
+                <h2 className="text-lg font-semibold text-card-foreground">
+                  {heygenConfig?.avatarName || "Avatar HeyGen"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Voz: {heygenConfig?.voiceName || "Voz padrão"}
+                </p>
               </div>
             </div>
+
+            <div className="flex items-center gap-4">
+              {/* Créditos restantes */}
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Créditos HeyGen</div>
+                <div className="text-lg font-semibold text-card-foreground">
+                  {(credits.total ?? 0) - (credits.used ?? 0)} / {credits.total ?? "—"}
+                </div>
+              </div>
+
+              {/* Botão trocar avatar */}
+              <Button
+                onClick={() => setShowWizard(true)}
+                variant="outline"
+                size="sm"
+              >
+                🔄 Trocar Avatar
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
 
         <div className="flex items-center justify-between">
           <div>
-            <button onClick={() => navigate(-1)} className="text-sm text-slate-500 underline">← Voltar</button>
-            <h1 className="text-2xl font-bold mt-2">🤖 AvatarAI — HeyGen (Self-service)</h1>
-            <p className="text-sm text-slate-500">Use suas credenciais HeyGen para gerar vídeos com seu avatar digital.</p>
+            <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              ← Voltar
+            </button>
+            <h1 className="text-2xl font-semibold text-card-foreground mt-2">🤖 AvatarAI — HeyGen (Self-service)</h1>
+            <p className="text-sm text-muted-foreground">Use suas credenciais HeyGen para gerar vídeos com seu avatar digital.</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex gap-1">

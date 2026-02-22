@@ -17,6 +17,11 @@ class HeyGenCredentials(BaseModel):
     voice_id: str = Field(..., min_length=1, description="Default Voice ID")
 
 
+class HeyGenApiKeyOnly(BaseModel):
+    """Modelo para validação de API Key (não salva no banco)"""
+    api_key: str = Field(..., min_length=10, description="HeyGen API Key")
+
+
 class HeyGenAvatar(BaseModel):
     """Avatar disponível no HeyGen"""
     avatar_id: str = Field(..., description="Unique avatar identifier")

@@ -43,6 +43,9 @@ Recommended reading order:
 - **[Tooling & Productivity Guide](./tooling.md)**  
   Helpful scripts, repo tooling, IDE hints, and automation notes.
 
+- **[Design System](./design-system.md)**  
+  Design tokens, UI components (shadcn/ui), colors, typography, spacing, and implementation guidelines.
+
 ---
 
 ## Repository snapshot (what you’ll see at the root)
@@ -68,9 +71,11 @@ Commonly referenced files/directories:
 This is the practical “where do I put/find X?” guide:
 
 - **UI components**
-  - `src/components/ui/` — reusable primitives (e.g., `button`, `badge`, `textarea`, charts)
+  - `src/components/ui/` — reusable primitives (e.g., `button`, `badge`, `textarea`, charts) - baseados em shadcn/ui
   - `src/components/layout/` — layout scaffolding (e.g., `MainLayout`)
   - `src/pages/` — route-level pages / screens
+  - `src/globals.css` — variáveis CSS do design system (cores, espaçamentos)
+  - `tailwind.config.ts` — configuração do tema Tailwind
 
 - **Auth**
   - `src/components/auth/` — auth UI and route protection (e.g., login/signup forms, protected routes)
