@@ -257,12 +257,12 @@ const Module3Page: React.FC = () => {
           </div>
 
           <HeyGenSetupWizard
-            onComplete={(data) => {
+            onComplete={() => {
               showSuccess("Configuração HeyGen salva com sucesso!");
-              // Recarregar a página para atualizar o estado
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
+              // Recarregar o hook ao invés de recarregar a página inteira
+              setShowWizard(false);
+              // Forçar re-render do componente
+              window.location.href = "/module-3/avatar-ai";
             }}
             onCancel={() => navigate("/dashboard")}
           />
@@ -291,13 +291,11 @@ const Module3Page: React.FC = () => {
           </div>
 
           <HeyGenSetupWizard
-            onComplete={(data) => {
+            onComplete={() => {
               showSuccess("Configuração atualizada com sucesso!");
               setShowWizard(false);
-              // Recarregar para atualizar o estado
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
+              // Forçar re-render do componente
+              window.location.href = "/module-3/avatar-ai";
             }}
             onCancel={() => setShowWizard(false)}
           />
