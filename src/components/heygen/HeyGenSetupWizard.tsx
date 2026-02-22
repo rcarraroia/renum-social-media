@@ -77,22 +77,6 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   }, [currentStep]);
 
   /**
-   * Debug: Monitora mudanças no estado do wizard
-   */
-  useEffect(() => {
-    console.log("[HEYGEN_WIZARD] Estado atual do wizard:");
-    console.log("- currentStep:", currentStep);
-    console.log("- selectedAvatarId:", selectedAvatarId);
-    console.log("- selectedVoiceId:", selectedVoiceId);
-    console.log("- avatars.length:", avatars.length);
-    console.log("- voices.length:", voices.length);
-    console.log("- loadingAvatars:", loadingAvatars);
-    console.log("- loadingVoices:", loadingVoices);
-    console.log("- savingConfig:", savingConfig);
-    console.log("- Botão 'Salvar' habilitado:", !(!selectedAvatarId || !selectedVoiceId || savingConfig));
-  }, [currentStep, selectedAvatarId, selectedVoiceId, avatars.length, voices.length, loadingAvatars, loadingVoices, savingConfig]);
-
-  /**
    * Obtém o token de autenticação do Supabase
    */
   const getAuthToken = async (): Promise<string | null> => {
@@ -183,51 +167,24 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
    * Salva a configuração completa (API Key + Avatar + Voz)
    */
   const handleSaveConfiguration = async () => {
-    console.log("[HEYGEN_WIZARD] ========================================");
-    console.log("[HEYGEN_WIZARD] Iniciando salvamento da configuração");
-    console.log("[HEYGEN_WIZARD] Avatar ID:", selectedAvatarId);
-    console.log("[HEYGEN_WIZARD] Voice ID:", selectedVoiceId);
-    console.log("[HEYGEN_WIZARD] API Key (primeiros 10 chars):", apiKey?.substring(0, 10));
-    
     if (!selectedAvatarId) {
-      console.log("[HEYGEN_WIZARD] ❌ ERRO: Avatar não selecionado");
       showError("Selecione um avatar");
       return;
     }
 
     if (!selectedVoiceId) {
-      console.log("[HEYGEN_WIZARD] ❌ ERRO: Voz não selecionada");
       showError("Selecione uma voz");
       return;
     }
 
-    console.log("[HEYGEN_WIZARD] ✅ Validações passaram");
     setSavingConfig(true);
     const toastId = showLoading("Salvando configuração...");
 
     try {
-      console.log("[HEYGEN_WIZARD] Obtendo token de autenticação...");
       const token = await getAuthToken();
-      
       if (!token) {
-        console.log("[HEYGEN_WIZARD] ❌ ERRO: Token não encontrado");
         throw new Error("Usuário não autenticado");
       }
-      
-      console.log("[HEYGEN_WIZARD] ✅ Token obtido (primeiros 20 chars):", token.substring(0, 20));
-      console.log("[HEYGEN_WIZARD] URL do backend:", import.meta.env.VITE_API_URL);
-      console.log("[HEYGEN_WIZARD] Enviando requisição PUT /api/integrations/heygen...");
-
-      const requestBody = {
-        api_key: apiKey,
-        avatar_id: selectedAvatarId,
-        voice_id: selectedVoiceId,
-      };
-      console.log("[HEYGEN_WIZARD] Body da requisição:", {
-        api_key: apiKey?.substring(0, 10) + "...",
-        avatar_id: selectedAvatarId,
-        voice_id: selectedVoiceId,
-      });
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen`, {
         method: "PUT",
@@ -235,25 +192,19 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          api_key: apiKey,
+          avatar_id: selectedAvatarId,
+          voice_id: selectedVoiceId,
+        }),
       });
-
-      console.log("[HEYGEN_WIZARD] Resposta recebida:");
-      console.log("[HEYGEN_WIZARD] - Status:", response.status);
-      console.log("[HEYGEN_WIZARD] - Status Text:", response.statusText);
-      console.log("[HEYGEN_WIZARD] - OK:", response.ok);
 
       dismissToast(toastId);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("[HEYGEN_WIZARD] ❌ ERRO na resposta:", errorData);
         throw new Error(errorData.detail || "Erro ao salvar configuração");
       }
-
-      const responseData = await response.json();
-      console.log("[HEYGEN_WIZARD] ✅ Resposta de sucesso:", responseData);
-      console.log("[HEYGEN_WIZARD] ========================================");
 
       showSuccess("Configuração salva com sucesso!");
 
@@ -266,9 +217,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
       }
     } catch (error: any) {
       dismissToast(toastId);
-      console.error("[HEYGEN_WIZARD] ❌ ERRO CRÍTICO:", error);
-      console.error("[HEYGEN_WIZARD] Stack trace:", error.stack);
-      console.log("[HEYGEN_WIZARD] ========================================");
+      console.error("Erro ao salvar configuração:", error);
       showError(error.message || "Erro ao salvar configuração. Tente novamente.");
     } finally {
       setSavingConfig(false);
