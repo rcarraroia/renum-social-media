@@ -7,15 +7,16 @@ import HeyGenCloneGuide from "./HeyGenCloneGuide";
 import AvatarCard from "./AvatarCard";
 
 /**
- * HeyGenSetupWizard - Wizard de configuração HeyGen em 2 passos
+ * HeyGenSetupWizard - Wizard de configuração HeyGen em 3 passos
  * 
- * Passo 1: Validação de API Key
- * Passo 2: Seleção de Avatar + Voz
+ * Passo 1: Validação e Salvamento de API Key
+ * Passo 2: Guia de Criação de Avatar
+ * Passo 3: Seleção de Avatar (voz opcional)
  * 
- * @version 1.0.1 - Debug logging enabled
+ * @version 2.0.0 - Configuração em etapas desacopladas
  */
 
-type WizardStep = 1 | 2;
+type WizardStep = 1 | 2 | 3;
 
 type ValidationState = "idle" | "loading" | "success" | "error";
 
@@ -43,7 +44,7 @@ interface Voice {
 }
 
 interface HeyGenSetupWizardProps {
-  onComplete?: (data: { apiKey: string; avatarId: string; voiceId: string }) => void;
+  onComplete?: () => void;
   onCancel?: () => void;
 }
 
@@ -57,24 +58,20 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   const [validationState, setValidationState] = useState<ValidationState>("idle");
   const [validationError, setValidationError] = useState<string>("");
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [savingApiKey, setSavingApiKey] = useState(false);
   
-  // Step 2: Avatar + Voice
+  // Step 3: Avatar (voz opcional)
   const [selectedAvatarId, setSelectedAvatarId] = useState("");
-  const [selectedVoiceId, setSelectedVoiceId] = useState("");
   const [avatars, setAvatars] = useState<Avatar[]>([]);
-  const [voices, setVoices] = useState<Voice[]>([]);
   const [loadingAvatars, setLoadingAvatars] = useState(false);
-  const [loadingVoices, setLoadingVoices] = useState(false);
-  const [savingConfig, setSavingConfig] = useState(false);
-  const [showCloneGuide, setShowCloneGuide] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
   /**
-   * Carrega avatares quando avança para o Passo 2
+   * Carrega avatares quando avança para o Passo 3
    */
   useEffect(() => {
-    if (currentStep === 2 && avatars.length === 0) {
+    if (currentStep === 3 && avatars.length === 0) {
       loadAvatars();
-      loadVoices();
     }
   }, [currentStep]);
 
@@ -242,16 +239,19 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   };
 
   /**
-   * Valida a API Key chamando o endpoint do backend
+   * Valida e salva a API Key imediatamente
    */
-  const handleValidateApiKey = async () => {
+  const handleValidateAndSaveApiKey = async () => {
     if (!apiKey || apiKey.trim().length < 10) {
       showError("API Key deve ter pelo menos 10 caracteres");
       return;
     }
 
     setValidationState("loading");
+    setSavingApiKey(true);
     setValidationError("");
+
+    const toastId = showLoading("Validando e salvando API Key...");
 
     try {
       const token = await getAuthToken();
@@ -259,7 +259,8 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         throw new Error("Usuário não autenticado. Faça login novamente.");
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/validate-key`, {
+      // Chamar novo endpoint que valida E salva
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/save-api-key`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -268,19 +269,34 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         body: JSON.stringify({ api_key: apiKey }),
       });
 
-      const data: ValidationResult = await response.json();
+      dismissToast(toastId);
 
-      if (response.ok && data.valid) {
+      if (response.ok) {
+        const data = await response.json();
         setValidationState("success");
         setCreditsRemaining(data.credits_remaining ?? null);
-        showSuccess("API Key válida! Avançando para seleção de avatar...");
+        showSuccess("API Key salva com sucesso! Agora vamos configurar seu avatar.");
         
-        // Avançar para o Passo 2 imediatamente
-        setCurrentStep(2);
+        // Avançar para o Passo 2 (Guia de Avatar)
+        setTimeout(() => setCurrentStep(2), 1000);
       } else {
+        const data = await response.json();
         setValidationState("error");
-        const errorMessage = data.error || "API Key inválida. Verifique suas credenciais.";
+        const errorMessage = data.detail || "Erro ao salvar API Key. Tente novamente.";
         setValidationError(errorMessage);
+        showError(errorMessage);
+      }
+    } catch (error: any) {
+      dismissToast(toastId);
+      setValidationState("error");
+      const errorMessage = error.message || "Erro ao validar API Key. Tente novamente.";
+      setValidationError(errorMessage);
+      showError(errorMessage);
+      console.error("Erro ao validar API Key:", error);
+    } finally {
+      setSavingApiKey(false);
+    }
+  };
         showError(errorMessage);
       }
     } catch (error: any) {
@@ -333,8 +349,8 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
               disabled={validationState === "loading" || validationState === "success"}
               className="w-full px-4 py-3 pr-12 border border-input rounded-md bg-background focus:ring-2 focus:ring-ring focus:border-input disabled:bg-muted disabled:text-muted-foreground transition-colors"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && validationState !== "loading") {
-                  handleValidateApiKey();
+                if (e.key === "Enter" && validationState !== "loading" && !savingApiKey) {
+                  handleValidateAndSaveApiKey();
                 }
               }}
             />
@@ -390,18 +406,19 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
             </Button>
           )}
           <Button
-            onClick={handleValidateApiKey}
-            disabled={!apiKey || apiKey.length < 10 || validationState === "loading" || validationState === "success"}
+            onClick={handleValidateAndSaveApiKey}
+            disabled={!apiKey || apiKey.length < 10 || validationState === "loading" || savingApiKey}
             className="flex-1"
             variant="default"
           >
-            {validationState === "loading" ? (
+            {validationState === "loading" || savingApiKey ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Validando...
+                Salvando...
               </>
-            ) : validationState === "success" ? (
-              <>
+            ) : (
+              "Salvar e Continuar"
+            )}
                 <CheckCircle2 className="w-5 h-5" />
                 Validado
               </>
