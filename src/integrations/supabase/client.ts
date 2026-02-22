@@ -14,4 +14,15 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
   },
+  realtime: {
+    // Desabilitar Realtime por padrão (não estamos usando)
+    params: {
+      eventsPerSecond: 0,
+    },
+  },
+  global: {
+    headers: {
+      'x-client-info': 'renum-social-media',
+    },
+  },
 });
