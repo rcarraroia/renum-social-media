@@ -31,7 +31,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    console.error("🔴 ErrorBoundary caught an error:", error, errorInfo);
+    console.error("🔴 Error message:", error.message);
+    console.error("🔴 Error stack:", error.stack);
+    console.error("🔴 Component stack:", errorInfo.componentStack);
 
     // Track error in analytics
     analytics.trackError(error.message, error.stack, {
@@ -87,10 +90,10 @@ export class ErrorBoundary extends Component<Props, State> {
               resolver.
             </p>
 
-            {process.env.NODE_ENV === "development" && this.state.error && (
-              <details className="mb-6 p-4 bg-gray-50 rounded border border-gray-200">
+            {this.state.error && (
+              <details className="mb-6 p-4 bg-gray-50 rounded border border-gray-200" open>
                 <summary className="cursor-pointer font-medium text-sm text-gray-700 mb-2">
-                  Detalhes do erro (apenas em desenvolvimento)
+                  Detalhes do erro
                 </summary>
                 <div className="text-xs text-gray-600 space-y-2">
                   <div>
@@ -99,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   {this.state.error.stack && (
                     <div>
                       <strong>Stack:</strong>
-                      <pre className="mt-1 overflow-auto text-xs bg-white p-2 rounded border">
+                      <pre className="mt-1 overflow-auto text-xs bg-white p-2 rounded border max-h-40">
                         {this.state.error.stack}
                       </pre>
                     </div>
@@ -107,7 +110,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   {this.state.errorInfo?.componentStack && (
                     <div>
                       <strong>Component Stack:</strong>
-                      <pre className="mt-1 overflow-auto text-xs bg-white p-2 rounded border">
+                      <pre className="mt-1 overflow-auto text-xs bg-white p-2 rounded border max-h-40">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </div>
