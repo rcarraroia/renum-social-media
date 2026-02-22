@@ -81,7 +81,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   const loadAvatars = async () => {
     setLoadingAvatars(true);
     try {
-      const response = await fetch("/api/integrations/heygen/avatars");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/avatars`);
       
       if (!response.ok) {
         throw new Error("Erro ao carregar avatares");
@@ -103,7 +103,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   const loadVoices = async () => {
     setLoadingVoices(true);
     try {
-      const response = await fetch("/api/integrations/heygen/voices");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/voices`);
       
       if (!response.ok) {
         throw new Error("Erro ao carregar vozes");
@@ -137,7 +137,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
     const toastId = showLoading("Salvando configuração...");
 
     try {
-      const response = await fetch("/api/integrations/heygen", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -187,7 +187,7 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
     setValidationError("");
 
     try {
-      const response = await fetch("/api/integrations/heygen/validate-key", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/validate-key`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
