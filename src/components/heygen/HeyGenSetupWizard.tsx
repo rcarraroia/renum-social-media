@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Loader2, CheckCircle2, XCircle, ExternalLink, RefreshCw, User, Sparkles } from "lucide-react";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import HeyGenCloneGuide from "./HeyGenCloneGuide";
 import AvatarCard from "./AvatarCard";
 
@@ -76,12 +77,29 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   }, [currentStep]);
 
   /**
+   * Obtém o token de autenticação do Supabase
+   */
+  const getAuthToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  };
+
+  /**
    * Carrega lista de avatares do backend
    */
   const loadAvatars = async () => {
     setLoadingAvatars(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/avatars`);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/avatars`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
       
       if (!response.ok) {
         throw new Error("Erro ao carregar avatares");
@@ -103,7 +121,16 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
   const loadVoices = async () => {
     setLoadingVoices(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/voices`);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/voices`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
       
       if (!response.ok) {
         throw new Error("Erro ao carregar vozes");
@@ -137,10 +164,16 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
     const toastId = showLoading("Salvando configuração...");
 
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           api_key: apiKey,
@@ -187,10 +220,16 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
     setValidationError("");
 
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Usuário não autenticado. Faça login novamente.");
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/heygen/validate-key`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ api_key: apiKey }),
       });
@@ -212,9 +251,9 @@ const HeyGenSetupWizard: React.FC<HeyGenSetupWizardProps> = ({ onComplete, onCan
         setValidationError(errorMessage);
         showError(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       setValidationState("error");
-      const errorMessage = "Erro ao validar API Key. Tente novamente.";
+      const errorMessage = error.message || "Erro ao validar API Key. Tente novamente.";
       setValidationError(errorMessage);
       showError(errorMessage);
       console.error("Erro ao validar API Key:", error);
